@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 
 	"github.com/danieljoos/wincred"
 	"github.com/urfave/cli/v2"
@@ -31,9 +32,15 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
+					user, err := user.Current()
+					if err != nil {
+						panic(err)
+					}
+
 					cred := wincred.NewGenericCredential(c.String("hostname"))
 					cred.CredentialBlob = []byte(c.String("apiToken"))
-					err := cred.Write()
+					cred.UserName = string(user.Username)
+					err = cred.Write()
 
 					if err == nil {
 						fmt.Println("Successfully created Windows Credential")
@@ -51,21 +58,42 @@ func main() {
 						Token string `json:"token"`
 					}
 
+					user, err := user.Current()
+					if err != nil {
+						log.Fatal(err)
+					}
+
 					if len(os.Args[2]) > 0 {
 						hostname := os.Args[2]
 						cred, err := wincred.GetGenericCredential(hostname)
-						if err == nil {
+
+						if err == nil && cred.UserName == user.Username {
 							response := &credentialResponse{
 								Token: string(cred.CredentialBlob),
 							}
 							responseA, _ := json.Marshal(response)
 							fmt.Println(string(responseA))
 						} else {
-							log.Fatal(err)
+							log.Fatal("You do not have permission view this Windows Credential")
 						}
 					} else {
 						log.Fatal("The name of the Terraform Enterprise server hostname was expected")
 					}
+					return nil
+				},
+			},
+			&cli.Command{
+				Name:  "generate",
+				Usage: "Generate the folders, credential-helpers file, and plugins required to leverage terracreds as a Terraform credential helper",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "plugins-dir",
+						Aliases: []string{"p"},
+						Value:   "",
+						Usage:   "The path of the Terraform plugins-dir. If not specified the default is based on Terraform's default plugin directory.",
+					},
+				},
+				Action: func(c *cli.Context) error {
 					return nil
 				},
 			},
