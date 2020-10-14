@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/user"
+	"runtime"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/danieljoos/wincred"
 	"github.com/urfave/cli/v2"
 )
@@ -17,24 +20,69 @@ func checkError(e error) {
 	}
 }
 
+// CopyTerraCreds will create a copy of the binary to the
+// destination path.
+func CopyTerraCreds(dest string) error {
+	from, err := os.Open(string(os.Args[0]))
+	checkError(err)
+	defer from.Close()
+
+	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0755)
+	checkError(err)
+	defer to.Close()
+
+	_, err = io.Copy(to, from)
+	checkError(err)
+	fmt.Println("Successfully copied binary: " + dest)
+	return nil
+}
+
+// NewDirectory checks for the existence of a directory
+// if it doesn't exist it creates it and checks for errors
+func NewDirectory(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			err := os.Mkdir(path, 0755)
+			checkError(err)
+			fmt.Println("Successfully created directory: " + path)
+		}
+	}
+	return nil
+}
+
+// WriteToFile will print any string of text to a file safely by
+// checking for errors and syncing at the end.
+func WriteToFile(filename string, data string) error {
+	file, err := os.Create(filename)
+	checkError(err)
+	defer file.Close()
+
+	_, err = io.WriteString(file, data)
+	checkError(err)
+	fmt.Println("Successfully created file: " + filename)
+	return file.Sync()
+}
+
 func main() {
 	app := &cli.App{
+		Name:  "terracreds",
+		Usage: "a credential helper for Terraform Cloud/Enterprise that leverages the local OS credential manager for storing API tokens",
 		Commands: []*cli.Command{
 			&cli.Command{
 				Name:  "new",
-				Usage: "Create a new Windows Credential object that contains the Terraform Enterprise authorization token",
+				Usage: "Create a new Windows Credential object that contains the Terraform Cloud/Enterprise authorization token",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
 						Aliases: []string{"n"},
 						Value:   "",
-						Usage:   "The name of the Terraform Enterprise server's hostname. This is also the display name of the Windows Credential",
+						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname. This is also the display name of the Windows Credential",
 					},
 					&cli.StringFlag{
 						Name:    "apiToken",
 						Aliases: []string{"t"},
 						Value:   "",
-						Usage:   "The Terraform Enterprise authorization token to store as a Windows Credential",
+						Usage:   "The Terraform Cloud/Enterprise authorization token to store as a Windows Credential object",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -76,17 +124,15 @@ func main() {
 							responseA, _ := json.Marshal(response)
 							fmt.Println(string(responseA))
 						} else {
-							log.Fatal("You do not have permission view this Windows Credential")
+							log.Fatal("You do not have permission to view this Windows Credential")
 						}
-					} else {
-						log.Fatal("The name of the Terraform Enterprise server hostname was expected")
 					}
 					return nil
 				},
 			},
 			&cli.Command{
 				Name:  "generate",
-				Usage: "Generate the folders, credential-helpers file, and plugins required to leverage terracreds as a Terraform credential helper",
+				Usage: "Generate the folders and plugin binary required to leverage terracreds as a Terraform credential helper",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "plugins-dir",
@@ -94,15 +140,29 @@ func main() {
 						Value:   "",
 						Usage:   "The path of the Terraform plugins-dir. If not specified the default is based on Terraform's default plugin directory.",
 					},
+					&cli.BoolFlag{
+						Name:  "create-cli-config",
+						Value: false,
+						Usage: "Creates the Terraform CLI config with a terracreds credential helper block",
+					},
 				},
 				Action: func(c *cli.Context) error {
-					userProfile := os.Getenv("USERPROFILE")
-					tfPlugins := userProfile + "\\AppData\\Roaming\\terraform.d\\plugins"
+					if runtime.GOOS == "windows" {
+						userProfile := os.Getenv("USERPROFILE")
+						tfUser := userProfile + "\\AppData\\Roaming\\terraform.d"
+						cliConfig := tfUser + "\\terraform.rc"
+						tfPlugins := tfUser + "\\plugins"
+						binary := tfPlugins + "\\terraform-credentials-terracreds.exe"
 
-					if _, err := os.Stat(tfPlugins); err != nil {
-						if os.IsNotExist(err) {
-							err := os.Mkdir(tfPlugins, 0755)
-							checkError(err)
+						NewDirectory(tfPlugins)
+						CopyTerraCreds(binary)
+						if c.Bool("create-cli-config") == true {
+							doc := heredoc.Doc(`
+							credentials_helper "terracreds" {
+								args = []
+							}
+							`)
+							WriteToFile(cliConfig, doc)
 						}
 					}
 					return nil
