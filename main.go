@@ -66,66 +66,65 @@ func WriteToFile(filename string, data string) error {
 func main() {
 	app := &cli.App{
 		Name:  "terracreds",
-		Usage: "a credential helper for Terraform Cloud/Enterprise that leverages the local OS credential manager for storing API tokens",
+		Usage: "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens",
 		Commands: []*cli.Command{
 			&cli.Command{
-				Name:  "new",
-				Usage: "Create a new Windows Credential object that contains the Terraform Cloud/Enterprise authorization token",
+				Name:  "create",
+				Usage: "Create a new credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
 						Aliases: []string{"n"},
 						Value:   "",
-						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname. This is also the display name of the Windows Credential",
+						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname. This is also the display name of the credential object",
 					},
 					&cli.StringFlag{
 						Name:    "apiToken",
 						Aliases: []string{"t"},
 						Value:   "",
-						Usage:   "The Terraform Cloud/Enterprise authorization token to store as a Windows Credential object",
+						Usage:   "The Terraform Cloud/Enterprise authorization token to be securely stored in the local operating system's credential manager",
 					},
 				},
 				Action: func(c *cli.Context) error {
 					user, err := user.Current()
 					checkError(err)
 
-					cred := wincred.NewGenericCredential(c.String("hostname"))
-					cred.CredentialBlob = []byte(c.String("apiToken"))
-					cred.UserName = string(user.Username)
-					err = cred.Write()
+					if runtime.GOOS == "windows" {
+						cred := wincred.NewGenericCredential(c.String("hostname"))
+						cred.CredentialBlob = []byte(c.String("apiToken"))
+						cred.UserName = string(user.Username)
+						err = cred.Write()
 
-					if err == nil {
-						fmt.Println("Successfully created Windows Credential")
-					} else {
-						log.Fatal(err)
+						if err == nil {
+							fmt.Println("Successfully created the credential object")
+						} else {
+							log.Fatal(err)
+						}
 					}
 					return nil
 				},
 			},
 			&cli.Command{
-				Name:  "get",
-				Usage: "Get the Windows Credential value by passing the hostname of the Terraform Enterprise server as an argument",
+				Name:  "delete",
+				Usage: "Delete a credential stored in the local operating system's credential manager",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "hostname",
+						Aliases: []string{"n"},
+						Value:   "",
+						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname. This is also the display name of the credential object",
+					},
+				},
 				Action: func(c *cli.Context) error {
-					type credentialResponse struct {
-						Token string `json:"token"`
-					}
-
 					user, err := user.Current()
 					checkError(err)
 
-					if len(os.Args[2]) > 0 {
-						hostname := os.Args[2]
-						cred, err := wincred.GetGenericCredential(hostname)
-
-						if err == nil && cred.UserName == user.Username {
-							response := &credentialResponse{
-								Token: string(cred.CredentialBlob),
-							}
-							responseA, _ := json.Marshal(response)
-							fmt.Println(string(responseA))
-						} else {
-							log.Fatal("You do not have permission to view this Windows Credential")
-						}
+					cred, err := wincred.GetGenericCredential(c.String("hostname"))
+					if err == nil && cred.UserName == user.Username {
+						cred.Delete()
+						fmt.Println("The credential object '" + c.String("hostname") + "' has been removed")
+					} else {
+						log.Fatal("You do not have permission to access this credential object")
 					}
 					return nil
 				},
@@ -138,7 +137,7 @@ func main() {
 						Name:    "plugins-dir",
 						Aliases: []string{"p"},
 						Value:   "",
-						Usage:   "The path of the Terraform plugins-dir. If not specified the default is based on Terraform's default plugin directory.",
+						Usage:   "The path of the Terraform plugins-dir. If not specified the default is based on Terraform's default plugin directory for the operating system.",
 					},
 					&cli.BoolFlag{
 						Name:  "create-cli-config",
@@ -168,10 +167,37 @@ func main() {
 					return nil
 				},
 			},
+			&cli.Command{
+				Name:  "get",
+				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument",
+				Action: func(c *cli.Context) error {
+					type credentialResponse struct {
+						Token string `json:"token"`
+					}
+
+					user, err := user.Current()
+					checkError(err)
+
+					if len(os.Args[2]) > 0 {
+						hostname := os.Args[2]
+						cred, err := wincred.GetGenericCredential(hostname)
+
+						if err == nil && cred.UserName == user.Username {
+							response := &credentialResponse{
+								Token: string(cred.CredentialBlob),
+							}
+							responseA, _ := json.Marshal(response)
+							fmt.Println(string(responseA))
+						} else {
+							log.Fatal("You do not have permission to view this credential")
+						}
+					}
+					return nil
+				},
+			},
 		},
 	}
 
 	err := app.Run(os.Args)
 	checkError(err)
 }
-//
