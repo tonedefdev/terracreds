@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"runtime"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/danieljoos/wincred"
@@ -61,6 +62,19 @@ func WriteToFile(filename string, data string) error {
 	checkError(err)
 	fmt.Println("Successfully created file: " + filename)
 	return file.Sync()
+}
+
+// WriteToLog will create a log if it doesn't exist and then append
+// messages to the log
+func WriteToLog(path string, data string, level string) error {
+	f, err := os.OpenFile(path,
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+	checkError(err)
+	defer f.Close()
+
+	logger := log.New(f, level, log.LstdFlags)
+	logger.Println(data)
+	return nil
 }
 
 func main() {
@@ -180,7 +194,18 @@ func main() {
 
 					if len(os.Args[2]) > 0 {
 						hostname := os.Args[2]
+						var path string
+						if strings.Contains(os.Args[0], "terraform-credentials-terracreds.exe") {
+							path = strings.Replace(os.Args[0], "terraform-credentials-terracreds.exe", "", -1)
+						} else {
+							path = strings.Replace(os.Args[0], "terracreds.exe", "", -1)
+						}
+
+						logPath := path + "\\terracreds.log"
 						cred, err := wincred.GetGenericCredential(hostname)
+
+						WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
+						WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
 
 						if err == nil && cred.UserName == user.Username {
 							response := &credentialResponse{
@@ -188,7 +213,9 @@ func main() {
 							}
 							responseA, _ := json.Marshal(response)
 							fmt.Println(string(responseA))
+							WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
 						} else {
+							WriteToLog(logPath, "- access was denied to: "+string(user.Username), "ERROR: ")
 							log.Fatal("You do not have permission to view this credential")
 						}
 					}
