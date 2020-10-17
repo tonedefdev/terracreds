@@ -13,9 +13,11 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/danieljoos/wincred"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v2"
 )
 
-func checkError(e error) {
+// CheckError processes the error
+func CheckError(e error) {
 	if e != nil {
 		log.Fatal(e)
 	}
@@ -25,17 +27,28 @@ func checkError(e error) {
 // destination path.
 func CopyTerraCreds(dest string) error {
 	from, err := os.Open(string(os.Args[0]))
-	checkError(err)
+	CheckError(err)
 	defer from.Close()
 
 	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0755)
-	checkError(err)
+	CheckError(err)
 	defer to.Close()
 
 	_, err = io.Copy(to, from)
-	checkError(err)
+	CheckError(err)
 	fmt.Println("Successfully copied binary: " + dest)
 	return nil
+}
+
+// GetBinaryPath returns the directory of the binary path
+func GetBinaryPath() string {
+	var path string
+	if strings.Contains(os.Args[0], "terraform-credentials-terracreds.exe") {
+		path = strings.Replace(os.Args[0], "terraform-credentials-terracreds.exe", "", -1)
+	} else {
+		path = strings.Replace(os.Args[0], "terracreds.exe", "", -1)
+	}
+	return path
 }
 
 // NewDirectory checks for the existence of a directory
@@ -44,7 +57,7 @@ func NewDirectory(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			err := os.Mkdir(path, 0755)
-			checkError(err)
+			CheckError(err)
 			fmt.Println("Successfully created directory: " + path)
 		}
 	}
@@ -55,11 +68,11 @@ func NewDirectory(path string) error {
 // checking for errors and syncing at the end.
 func WriteToFile(filename string, data string) error {
 	file, err := os.Create(filename)
-	checkError(err)
+	CheckError(err)
 	defer file.Close()
 
 	_, err = io.WriteString(file, data)
-	checkError(err)
+	CheckError(err)
 	fmt.Println("Successfully created file: " + filename)
 	return file.Sync()
 }
@@ -69,7 +82,7 @@ func WriteToFile(filename string, data string) error {
 func WriteToLog(path string, data string, level string) error {
 	f, err := os.OpenFile(path,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
-	checkError(err)
+	CheckError(err)
 	defer f.Close()
 
 	logger := log.New(f, level, log.LstdFlags)
@@ -77,14 +90,64 @@ func WriteToLog(path string, data string, level string) error {
 	return nil
 }
 
+// CreateConfigFile creates a default terracreds config file if one does not
+// exist in the same path as the binary
+func CreateConfigFile() error {
+	bin := GetBinaryPath()
+	path := bin + "config.yaml"
+
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			doc := heredoc.Doc(`
+logging:
+  enabled: false
+  path:`)
+			WriteToFile(path, doc)
+		}
+	}
+	return nil
+}
+
+// LoadConfig loads the config file if it exists
+// and creates the config file if doesn't exist
+func LoadConfig(cfg *Config) error {
+	CreateConfigFile()
+
+	bin := GetBinaryPath()
+	path := bin + "config.yaml"
+	f, err := os.Open(string(path))
+	CheckError(err)
+	defer f.Close()
+
+	decoder := yaml.NewDecoder(f)
+	err = decoder.Decode(cfg)
+	CheckError(err)
+	return err
+}
+
+// Config struct for terracreds custom configuration
+type Config struct {
+	Logging struct {
+		Enabled bool   `yaml:"enabled"`
+		Path    string `yaml:"path"`
+	} `yaml:"logging"`
+}
+
+// CredentialResponse formatted for consumption by Terraform
+type CredentialResponse struct {
+	Token string `json:"token"`
+}
+
 func main() {
 	app := &cli.App{
-		Name:  "terracreds",
-		Usage: "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens",
+		Name:      "terracreds",
+		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens",
+		UsageText: "terracreds create -n api.terraform.com -t sampleApiTokenString",
+		Version:   "1.0.0",
 		Commands: []*cli.Command{
 			&cli.Command{
 				Name:  "create",
-				Usage: "Create a new credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
+				Usage: "Create or update a credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
@@ -96,12 +159,15 @@ func main() {
 						Name:    "apiToken",
 						Aliases: []string{"t"},
 						Value:   "",
-						Usage:   "The Terraform Cloud/Enterprise authorization token to be securely stored in the local operating system's credential manager",
+						Usage:   "The Terraform Cloud/Enterprise API authorization token to be securely stored in the local operating system's credential manager",
 					},
 				},
 				Action: func(c *cli.Context) error {
 					user, err := user.Current()
-					checkError(err)
+					CheckError(err)
+
+					var cfg Config
+					LoadConfig(&cfg)
 
 					if runtime.GOOS == "windows" {
 						cred := wincred.NewGenericCredential(c.String("hostname"))
@@ -112,7 +178,7 @@ func main() {
 						if err == nil {
 							fmt.Println("Successfully created the credential object")
 						} else {
-							log.Fatal(err)
+							log.Fatal("You do not have permission to access this credential object")
 						}
 					}
 					return nil
@@ -131,12 +197,20 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					user, err := user.Current()
-					checkError(err)
+					CheckError(err)
+					var cfg Config
 
 					cred, err := wincred.GetGenericCredential(c.String("hostname"))
 					if err == nil && cred.UserName == user.Username {
 						cred.Delete()
-						fmt.Println("The credential object '" + c.String("hostname") + "' has been removed")
+
+						msg := "The credential object '" + c.String("hostname") + "' has been removed"
+						fmt.Println(msg)
+						LoadConfig(&cfg)
+						if cfg.Logging.Enabled == true {
+							logPath := cfg.Logging.Path + "\\terracreds.log"
+							WriteToLog(logPath, msg, "INFO: ")
+						}
 					} else {
 						log.Fatal("You do not have permission to access this credential object")
 					}
@@ -147,16 +221,10 @@ func main() {
 				Name:  "generate",
 				Usage: "Generate the folders and plugin binary required to leverage terracreds as a Terraform credential helper",
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "plugins-dir",
-						Aliases: []string{"p"},
-						Value:   "",
-						Usage:   "The path of the Terraform plugins-dir. If not specified the default is based on Terraform's default plugin directory for the operating system.",
-					},
 					&cli.BoolFlag{
 						Name:  "create-cli-config",
 						Value: false,
-						Usage: "Creates the Terraform CLI config with a terracreds credential helper block",
+						Usage: "Creates the Terraform CLI config with a terracreds credential helper block. This will overwrite the existing file if it already exists",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -173,8 +241,7 @@ func main() {
 							doc := heredoc.Doc(`
 							credentials_helper "terracreds" {
 								args = []
-							}
-							`)
+							}`)
 							WriteToFile(cliConfig, doc)
 						}
 					}
@@ -183,39 +250,38 @@ func main() {
 			},
 			&cli.Command{
 				Name:  "get",
-				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument",
+				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
 				Action: func(c *cli.Context) error {
-					type credentialResponse struct {
-						Token string `json:"token"`
-					}
-
 					user, err := user.Current()
-					checkError(err)
+					CheckError(err)
 
 					if len(os.Args[2]) > 0 {
+						var logPath string
+						var cfg Config
 						hostname := os.Args[2]
-						var path string
-						if strings.Contains(os.Args[0], "terraform-credentials-terracreds.exe") {
-							path = strings.Replace(os.Args[0], "terraform-credentials-terracreds.exe", "", -1)
-						} else {
-							path = strings.Replace(os.Args[0], "terracreds.exe", "", -1)
+
+						LoadConfig(&cfg)
+						if cfg.Logging.Enabled == true {
+							logPath = cfg.Logging.Path + "\\terracreds.log"
+							WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
+							WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
 						}
 
-						logPath := path + "\\terracreds.log"
 						cred, err := wincred.GetGenericCredential(hostname)
-
-						WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
-						WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
-
 						if err == nil && cred.UserName == user.Username {
-							response := &credentialResponse{
+							response := &CredentialResponse{
 								Token: string(cred.CredentialBlob),
 							}
 							responseA, _ := json.Marshal(response)
 							fmt.Println(string(responseA))
-							WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+
+							if cfg.Logging.Enabled == true {
+								WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+							}
 						} else {
-							WriteToLog(logPath, "- access was denied to: "+string(user.Username), "ERROR: ")
+							if cfg.Logging.Enabled == true {
+								WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
+							}
 							log.Fatal("You do not have permission to view this credential")
 						}
 					}
@@ -226,5 +292,5 @@ func main() {
 	}
 
 	err := app.Run(os.Args)
-	checkError(err)
+	CheckError(err)
 }
