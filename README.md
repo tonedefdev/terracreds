@@ -1,10 +1,12 @@
 # Terracreds
-A credential helper for Terraform Cloud/Enterprise that allows secure storage of your API token within the operating system's vault instead of in a plain text configuration file. We all know that storing sensitive secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with community.
+A credential helper for Terraform Cloud/Enterprise that allows secure storage of your API token within the operating system's vault instead of in a plain text configuration file. We all know that storing sensitive secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community.
 
 #### Currently supported Operating Systems:
 - [x] Windows (Credential Manager)
 - [ ] MacOS (Keychain)
 - [ ] Linux (ksecretservice or gnome-keyring)
+
+The MacOS and Linux versions are currently in development. Check back soon for updates!
 
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
@@ -33,16 +35,16 @@ go install -v
 Navigate to the `bin` directory and you should see the `terracreds.exe` binary. Copy this to any directory of your choosing. Be sure to add the directory on `$env:PATH` to make using the application easier.
 
 ## Initial Configuration
-In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\Romaing\terraform.d\plugins`
+In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\Roaming\terraform.d\plugins`
 
-To make things as simple as possible we created a helper function to do this. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
+To make things as simple as possible we created a helper command to do this. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
 ```powershell
 terracreds generate
 ```
 
 This command will generate the binary as `terraform-credentials-terracreds.exe` which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
 
-If you don't already have a `terraform.rc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary. However, if you already have tokens stored in your CLI config you'll likely want to add the following block to your `terraform.rc` file instead:
+If you don't already have a `terraform.rc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary. However, if you already have tokens stored in your CLI config you'll likely want to add the following block to your `terraform.rc` file instead to prevent overwriting the file:
 
 ```hcl
 credentials_helper "terracreds" {
