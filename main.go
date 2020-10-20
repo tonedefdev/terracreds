@@ -12,6 +12,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/danieljoos/wincred"
+	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v2"
 )
@@ -175,9 +176,9 @@ func main() {
 						err = cred.Write()
 
 						if err == nil {
-							fmt.Println("Successfully created the credential object")
+							color.Green("Successfully created\\updated the credential object")
 						} else {
-							log.Fatal("You do not have permission to access this credential object")
+							color.Red("You do not have permission to access this credential object")
 						}
 					}
 					return nil
@@ -203,13 +204,13 @@ func main() {
 						cred.Delete()
 
 						msg := "The credential object '" + c.String("hostname") + "' has been removed"
-						fmt.Println(msg)
+						color.Green(msg)
 						if cfg.Logging.Enabled == true {
 							logPath := cfg.Logging.Path + "\\terracreds.log"
 							WriteToLog(logPath, msg, "INFO: ")
 						}
 					} else {
-						log.Fatal("You do not have permission to access this credential object")
+						color.Red("You do not have permission to access this credential object")
 					}
 					return nil
 				},
@@ -252,16 +253,14 @@ func main() {
 					user, err := user.Current()
 					CheckError(err)
 
-					if len(os.Args[2]) > 0 {
+					if len(os.Args) > 2 {
 						var logPath string
 						hostname := os.Args[2]
-
 						if cfg.Logging.Enabled == true {
 							logPath = cfg.Logging.Path + "\\terracreds.log"
 							WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
 							WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
 						}
-
 						cred, err := wincred.GetGenericCredential(hostname)
 						if err == nil && cred.UserName == user.Username {
 							response := &CredentialResponse{
@@ -277,8 +276,16 @@ func main() {
 							if cfg.Logging.Enabled == true {
 								WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
 							}
-							log.Fatal("You do not have permission to view this credential")
+							color.Red("You do not have permission to view this credential")
 						}
+					} else {
+						var logPath string
+						msg := "A hostname was expected after the 'get' command but no argument was provided"
+						if cfg.Logging.Enabled == true {
+							logPath = cfg.Logging.Path + "\\terracreds.log"
+							WriteToLog(logPath, msg, "ERROR: ")
+						}
+						color.Red(msg)
 					}
 					return nil
 				},

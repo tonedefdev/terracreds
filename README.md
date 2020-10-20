@@ -81,7 +81,7 @@ terracreds get my.terraform.com
 ```
 
 Example output:
-```powershell
+```json
 {"token":"reallybigtokenyoudontevenknow"}
 ```
 
