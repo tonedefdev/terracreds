@@ -139,9 +139,11 @@ type CredentialResponse struct {
 }
 
 func main() {
+	var cfg Config
+	LoadConfig(&cfg)
 	app := &cli.App{
 		Name:      "terracreds",
-		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens",
+		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
 		UsageText: "terracreds create -n api.terraform.com -t sampleApiTokenString",
 		Version:   "1.0.0",
 		Commands: []*cli.Command{
@@ -165,9 +167,6 @@ func main() {
 				Action: func(c *cli.Context) error {
 					user, err := user.Current()
 					CheckError(err)
-
-					var cfg Config
-					LoadConfig(&cfg)
 
 					if runtime.GOOS == "windows" {
 						cred := wincred.NewGenericCredential(c.String("hostname"))
@@ -198,7 +197,6 @@ func main() {
 				Action: func(c *cli.Context) error {
 					user, err := user.Current()
 					CheckError(err)
-					var cfg Config
 
 					cred, err := wincred.GetGenericCredential(c.String("hostname"))
 					if err == nil && cred.UserName == user.Username {
@@ -206,7 +204,6 @@ func main() {
 
 						msg := "The credential object '" + c.String("hostname") + "' has been removed"
 						fmt.Println(msg)
-						LoadConfig(&cfg)
 						if cfg.Logging.Enabled == true {
 							logPath := cfg.Logging.Path + "\\terracreds.log"
 							WriteToLog(logPath, msg, "INFO: ")
@@ -257,10 +254,8 @@ func main() {
 
 					if len(os.Args[2]) > 0 {
 						var logPath string
-						var cfg Config
 						hostname := os.Args[2]
 
-						LoadConfig(&cfg)
 						if cfg.Logging.Enabled == true {
 							logPath = cfg.Logging.Path + "\\terracreds.log"
 							WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
