@@ -75,9 +75,14 @@ When Terraform leverages `terracreds` as the credential provider it will run the
 terraform-credentials-terracreds get my.terraform.com
 ```
 
-Alternatively, you can run the same command using either binary to return the credentials. The response is formatted as JSON object as required by Terraform to use the token:
+Alternatively, you can run the same command using either binary to return the credentials. The response is formatted as a JSON object as required by Terraform to use the token:
 ```powershell
 terracreds get my.terraform.com
+```
+
+Example output:
+```powershell
+{"token":"reallybigtokenyoudontevenknow"}
 ```
 
 ## Deleting Credentials
@@ -87,7 +92,7 @@ terracreds delete -n my.terraform.com
 ```
 
 ## Protection
-In order to add some layers of protection `terracreds` adds a username to the credential object, and checks to ensure that the user requesting access to the token is the same user the token is associated to. This means that only the user account used to create the token can view the token from `terracreds` which ensures that your token can only be read by your user account. Any attempt to access or modify this token from `terracreds` will lead to denial messages.
+In order to add some layers of protection `terracreds` adds a username to the credential object, and checks to ensure that the user requesting access to the token is the same user as the token's creator. This means that only the user account used to create the token can view the token from `terracreds` which ensures that your token can only be read by your user account. Any attempt to access or modify this token from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts.
 
 ## Logging
 Wherever either binary is stored `terracreds.exe` or `terraform-credential-terracreds.exe` a `config.yaml` file is generated on first launch of the binary. Currently, this configuration file only enables/disables logging and sets the log path. If logging is enabled you'll find the log named `terracreds.log` at the provided path. 
