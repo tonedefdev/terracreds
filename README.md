@@ -85,6 +85,12 @@ Example output:
 {"token":"reallybigtokenyoudontevenknow"}
 ```
 
+## Updating Credentials
+To update a credential simply run the same create command and it will update the token instead:
+```powershell
+terracreds create -n my.terraform.com -t reallybignewtoken
+```
+
 ## Deleting Credentials
 You can delete the credential object at any time by running:
 ```powershell
