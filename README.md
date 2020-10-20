@@ -6,7 +6,7 @@ A credential helper for Terraform Cloud/Enterprise that allows secure storage of
 - [ ] MacOS (Keychain)
 - [ ] Linux (ksecretservice or gnome-keyring)
 
-The MacOS and Linux versions are currently in development. Check back soon for updates!
+*The MacOS and Linux versions are currently in development. If you'd like to support the project please feel free to submit a PR*
 
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
