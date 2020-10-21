@@ -44,7 +44,7 @@ terracreds generate
 
 This command will generate the binary as `terraform-credentials-terracreds.exe` which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
 
-If you don't already have a `terraform.rc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary. However, if you already have tokens stored in your CLI config you'll likely want to add the following block to your `terraform.rc` file instead to prevent overwriting the file:
+In addition to the binary and plugin a `terraform.rc` file is required with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary. However, if you already have a `terraform.rc` file you will need to add the following block to your `terraform.rc` file instead:
 
 ```hcl
 credentials_helper "terracreds" {
@@ -52,7 +52,19 @@ credentials_helper "terracreds" {
 }
 ```
 
-Once you have moved all of your tokens to the `Windows Credential Manager` you can remove the tokens from the `terraform.rc` file.
+Once you have moved all of your tokens from the `terraform.rc` file to the `Windows Credential Manager` via `terracreds` you can remove the tokens from the `terraform.rc` file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens. Be sure to remove your tokens from the `terraform.rc` file once you have used the `create` command to create the credentials in `terracreds` so you can actually leverage the credential helper.
+
+The last configuration step is to add a Terraform environment variable that points to the path fo the `terraform.rc` file. Terraform's documentation states that on Windows the default location is `%APPDATA%\Roaming\terraform.d\` however in our testing this wasn't the case. You can set the environment variable one of two ways:
+
+Add the following to your PowerShell profile (`Microsoft.PowerShell_profile.ps1`) to persist this environment variable each time a PowerShell session is launched:
+```powershell
+$env:TF_CLI_CONFIG_FILE="$($env:APPDATA)\terraform.d\terraform.rc"
+```
+
+Manually add the environment variable as a user variable by navigating to `Control Panel > All Control Panel Items > System > Advanced system settings > Environment variables... > User variables > New...` then enter:
+
+Variable name: TF_CLI_CONFIG_FILE
+Variable value: %APPDATA%\terraform.d\terraform.rc
 
 ## Storing Credentials
 For Terraform to properly use the credentials stored in your credential manager they need to be stored a specific way. The name of the credential object must be the domain name of the Terraform Cloud or Enterprise server. For instance `my.terraform.com`
