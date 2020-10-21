@@ -36,4 +36,4 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: terracreds.exe
-        path: /opt/hostedtoolcache/go/1.15.3/x64/terracreds.exe
+        path: /opt/hostedtoolcache/go/1.15.3/x64/bin/terracreds.exe
