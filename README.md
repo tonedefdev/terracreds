@@ -35,7 +35,7 @@ go install -v
 Navigate to the `bin` directory and you should see the `terracreds.exe` binary. Copy this to any directory of your choosing. Be sure to add the directory on `$env:PATH` to make using the application easier.
 
 ## Initial Configuration
-In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\Roaming\terraform.d\plugins`
+In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins`
 
 To make things as simple as possible we created a helper command to do this. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
 ```powershell
@@ -63,8 +63,10 @@ $env:TF_CLI_CONFIG_FILE="$($env:APPDATA)\terraform.d\terraform.rc"
 
 Manually add the environment variable as a user variable by navigating to `Control Panel > All Control Panel Items > System > Advanced system settings > Environment variables... > User variables > New...` then enter:
 
+```txt
 Variable name: TF_CLI_CONFIG_FILE
 Variable value: %APPDATA%\terraform.d\terraform.rc
+```
 
 ## Storing Credentials
 For Terraform to properly use the credentials stored in your credential manager they need to be stored a specific way. The name of the credential object must be the domain name of the Terraform Cloud or Enterprise server. For instance `my.terraform.com`
