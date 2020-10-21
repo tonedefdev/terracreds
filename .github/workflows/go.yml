@@ -32,3 +32,8 @@ jobs:
 
     - name: Build
       run: go build -v .
+      
+    - uses: actions/upload-artifact@v2
+      with:
+        name: terracreds.exe
+        path: /home/runner/go/terracreds.exe
