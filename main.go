@@ -176,9 +176,9 @@ func main() {
 						err = cred.Write()
 
 						if err == nil {
-							color.Green("Successfully created\\updated the credential object")
+							fmt.Fprintf(color.Output, "%s: Created\\updated the credential object '%s'", color.GreenString("SUCCESS"), c.String("hostname"))
 						} else {
-							color.Red("You do not have permission to access this credential object")
+							fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
 						}
 					}
 					return nil
@@ -204,13 +204,13 @@ func main() {
 						cred.Delete()
 
 						msg := "The credential object '" + c.String("hostname") + "' has been removed"
-						color.Green(msg)
+						fmt.Fprintf(color.Output, "%s: %s", color.GreenString("SUCCESS"), msg)
 						if cfg.Logging.Enabled == true {
 							logPath := cfg.Logging.Path + "\\terracreds.log"
 							WriteToLog(logPath, msg, "INFO: ")
 						}
 					} else {
-						color.Red("You do not have permission to access this credential object")
+						fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
 					}
 					return nil
 				},
@@ -276,7 +276,7 @@ func main() {
 							if cfg.Logging.Enabled == true {
 								WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
 							}
-							color.Red("You do not have permission to view this credential")
+							fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
 						}
 					} else {
 						var logPath string
@@ -285,7 +285,7 @@ func main() {
 							logPath = cfg.Logging.Path + "\\terracreds.log"
 							WriteToLog(logPath, msg, "ERROR: ")
 						}
-						color.Red(msg)
+						fmt.Fprintf(color.Output, "%s: %s", color.RedString("ERROR"), msg)
 					}
 					return nil
 				},
