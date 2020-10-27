@@ -126,6 +126,111 @@ func LoadConfig(cfg *Config) error {
 	return err
 }
 
+// CreateCredential checks the current os
+// then creates a credential object in its vault
+func CreateCredential(c *cli.Context) {
+	user, err := user.Current()
+	CheckError(err)
+
+	if runtime.GOOS == "windows" {
+		cred := wincred.NewGenericCredential(c.String("hostname"))
+		cred.CredentialBlob = []byte(c.String("apiToken"))
+		cred.UserName = string(user.Username)
+		err = cred.Write()
+
+		if err == nil {
+			fmt.Fprintf(color.Output, "%s: Created\\updated the credential object '%s'", color.GreenString("SUCCESS"), c.String("hostname"))
+		} else {
+			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
+		}
+	}
+}
+
+// DeleteCredential removes the identified credential
+// from the vault
+func DeleteCredential(c *cli.Context, cfg Config) {
+	user, err := user.Current()
+	CheckError(err)
+
+	cred, err := wincred.GetGenericCredential(c.String("hostname"))
+	if err == nil && cred.UserName == user.Username {
+		cred.Delete()
+
+		msg := "The credential object '" + c.String("hostname") + "' has been removed"
+		fmt.Fprintf(color.Output, "%s: %s", color.GreenString("SUCCESS"), msg)
+		if cfg.Logging.Enabled == true {
+			logPath := cfg.Logging.Path + "\\terracreds.log"
+			WriteToLog(logPath, msg, "INFO: ")
+		}
+	} else {
+		fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
+	}
+}
+
+// GenerateTerracreds creates the binary to use this package as a credential helper
+// and optionally the terraform.rc file
+func GenerateTerracreds(c *cli.Context) {
+	if runtime.GOOS == "windows" {
+		userProfile := os.Getenv("USERPROFILE")
+		tfUser := userProfile + "\\AppData\\Roaming\\terraform.d"
+		cliConfig := tfUser + "\\terraform.rc"
+		tfPlugins := tfUser + "\\plugins"
+		binary := tfPlugins + "\\terraform-credentials-terracreds.exe"
+
+		NewDirectory(tfPlugins)
+		CopyTerraCreds(binary)
+		if c.Bool("create-cli-config") == true {
+			doc := heredoc.Doc(`
+			credentials_helper "terracreds" {
+				args = []
+			}`)
+			WriteToFile(cliConfig, doc)
+		}
+	}
+}
+
+// GetCredential returns the stored credential as a JSON
+// object as required to be consumed by Terraform Cloud/Enterprise
+func GetCredential(c *cli.Context, cfg Config) {
+	user, err := user.Current()
+	CheckError(err)
+
+	if len(os.Args) > 2 {
+		var logPath string
+		hostname := os.Args[2]
+		if cfg.Logging.Enabled == true {
+			logPath = cfg.Logging.Path + "\\terracreds.log"
+			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
+			WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
+		}
+		cred, err := wincred.GetGenericCredential(hostname)
+		if err == nil && cred.UserName == user.Username {
+			response := &CredentialResponse{
+				Token: string(cred.CredentialBlob),
+			}
+			responseA, _ := json.Marshal(response)
+			fmt.Println(string(responseA))
+
+			if cfg.Logging.Enabled == true {
+				WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+			}
+		} else {
+			if cfg.Logging.Enabled == true {
+				WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
+			}
+			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
+		}
+	} else {
+		var logPath string
+		msg := "A hostname was expected after the 'get' command but no argument was provided"
+		if cfg.Logging.Enabled == true {
+			logPath = cfg.Logging.Path + "\\terracreds.log"
+			WriteToLog(logPath, msg, "ERROR: ")
+		}
+		fmt.Fprintf(color.Output, "%s: %s", color.RedString("ERROR"), msg)
+	}
+}
+
 // Config struct for terracreds custom configuration
 type Config struct {
 	Logging struct {
@@ -146,7 +251,7 @@ func main() {
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
 		UsageText: "terracreds create -n api.terraform.com -t sampleApiTokenString",
-		Version:   "1.0.0",
+		Version:   "1.0.1",
 		Commands: []*cli.Command{
 			&cli.Command{
 				Name:  "create",
@@ -166,21 +271,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					user, err := user.Current()
-					CheckError(err)
-
-					if runtime.GOOS == "windows" {
-						cred := wincred.NewGenericCredential(c.String("hostname"))
-						cred.CredentialBlob = []byte(c.String("apiToken"))
-						cred.UserName = string(user.Username)
-						err = cred.Write()
-
-						if err == nil {
-							fmt.Fprintf(color.Output, "%s: Created\\updated the credential object '%s'", color.GreenString("SUCCESS"), c.String("hostname"))
-						} else {
-							fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
-						}
-					}
+					CreateCredential(c)
 					return nil
 				},
 			},
@@ -196,22 +287,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					user, err := user.Current()
-					CheckError(err)
-
-					cred, err := wincred.GetGenericCredential(c.String("hostname"))
-					if err == nil && cred.UserName == user.Username {
-						cred.Delete()
-
-						msg := "The credential object '" + c.String("hostname") + "' has been removed"
-						fmt.Fprintf(color.Output, "%s: %s", color.GreenString("SUCCESS"), msg)
-						if cfg.Logging.Enabled == true {
-							logPath := cfg.Logging.Path + "\\terracreds.log"
-							WriteToLog(logPath, msg, "INFO: ")
-						}
-					} else {
-						fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
-					}
+					DeleteCredential(c, cfg)
 					return nil
 				},
 			},
@@ -226,23 +302,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if runtime.GOOS == "windows" {
-						userProfile := os.Getenv("USERPROFILE")
-						tfUser := userProfile + "\\AppData\\Roaming\\terraform.d"
-						cliConfig := tfUser + "\\terraform.rc"
-						tfPlugins := tfUser + "\\plugins"
-						binary := tfPlugins + "\\terraform-credentials-terracreds.exe"
-
-						NewDirectory(tfPlugins)
-						CopyTerraCreds(binary)
-						if c.Bool("create-cli-config") == true {
-							doc := heredoc.Doc(`
-							credentials_helper "terracreds" {
-								args = []
-							}`)
-							WriteToFile(cliConfig, doc)
-						}
-					}
+					GenerateTerracreds(c)
 					return nil
 				},
 			},
@@ -250,43 +310,7 @@ func main() {
 				Name:  "get",
 				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
 				Action: func(c *cli.Context) error {
-					user, err := user.Current()
-					CheckError(err)
-
-					if len(os.Args) > 2 {
-						var logPath string
-						hostname := os.Args[2]
-						if cfg.Logging.Enabled == true {
-							logPath = cfg.Logging.Path + "\\terracreds.log"
-							WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
-							WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
-						}
-						cred, err := wincred.GetGenericCredential(hostname)
-						if err == nil && cred.UserName == user.Username {
-							response := &CredentialResponse{
-								Token: string(cred.CredentialBlob),
-							}
-							responseA, _ := json.Marshal(response)
-							fmt.Println(string(responseA))
-
-							if cfg.Logging.Enabled == true {
-								WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
-							}
-						} else {
-							if cfg.Logging.Enabled == true {
-								WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
-							}
-							fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential", color.RedString("ERROR"))
-						}
-					} else {
-						var logPath string
-						msg := "A hostname was expected after the 'get' command but no argument was provided"
-						if cfg.Logging.Enabled == true {
-							logPath = cfg.Logging.Path + "\\terracreds.log"
-							WriteToLog(logPath, msg, "ERROR: ")
-						}
-						fmt.Fprintf(color.Output, "%s: %s", color.RedString("ERROR"), msg)
-					}
+					GetCredential(c, cfg)
 					return nil
 				},
 			},
