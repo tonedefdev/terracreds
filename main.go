@@ -37,7 +37,7 @@ func CopyTerraCreds(dest string) error {
 
 	_, err = io.Copy(to, from)
 	CheckError(err)
-	fmt.Println("Successfully copied binary: " + dest)
+	fmt.Fprintf(color.Output, "%s: Copied binary '%s' to '%s'", color.CyanString("INFO"), string(os.Args[0]), dest)
 	return nil
 }
 
@@ -59,7 +59,7 @@ func NewDirectory(path string) error {
 		if os.IsNotExist(err) {
 			err := os.Mkdir(path, 0755)
 			CheckError(err)
-			fmt.Println("Successfully created directory: " + path)
+			fmt.Fprintf(color.Output, "%s: Created directory '%s'", color.CyanString("INFO"), path)
 		}
 	}
 	return nil
@@ -74,7 +74,7 @@ func WriteToFile(filename string, data string) error {
 
 	_, err = io.WriteString(file, data)
 	CheckError(err)
-	fmt.Println("Successfully created file: " + filename)
+	fmt.Fprintf(color.Output, "%s: Created file '%s'", color.CyanString("INFO"), filename)
 	return file.Sync()
 }
 
