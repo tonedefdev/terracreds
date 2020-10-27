@@ -307,8 +307,8 @@ func main() {
 				Name:  "get",
 				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
 				Action: func(c *cli.Context) error {
-					hostname := os.Args[2]
 					if len(os.Args) > 2 {
+						hostname := os.Args[2]
 						GetCredential(c, cfg, hostname)
 					} else {
 						msg := "A hostname was expected after the 'get' command but no argument was provided"
