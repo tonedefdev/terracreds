@@ -22,7 +22,6 @@ func TestWritToFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unable to write the test file at '%s'", filePath)
 	} else {
-		file.Sync()
 		data, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			t.Errorf("Unable to read the test file at '%s'", filePath)
