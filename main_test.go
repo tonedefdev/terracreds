@@ -2,6 +2,8 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/danieljoos/wincred"
@@ -38,6 +40,23 @@ func TestNewDirectory(t *testing.T) {
 		t.Errorf("Unable to create the test directory at '%s'", filePath)
 	}
 	t.Logf("Created test directory at '%s'", filePath)
+}
+
+func TestGetBinaryPath(t *testing.T) {
+	var paths [3]string
+	argPath := strings.Replace(os.Args[0], "terracreds.test.exe", "", -1)
+	paths[0] = argPath + "terraform-credentials-terracreds.exe"
+	paths[1] = argPath + "terracreds.test.exe"
+	paths[2] = argPath + "terracreds.exe"
+
+	for _, path := range paths {
+		binaryPath := GetBinaryPath(path)
+		if binaryPath != argPath {
+			t.Errorf("Expected '%s' got '%s'", path, binaryPath)
+		}
+
+		t.Logf("The binary path sent was '%s' and it correctly returned '%s'", path, binaryPath)
+	}
 }
 
 func TestGenerateTerracreds(t *testing.T) {

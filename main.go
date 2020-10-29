@@ -42,14 +42,14 @@ func CopyTerraCreds(dest string) error {
 }
 
 // GetBinaryPath returns the directory of the binary path
-func GetBinaryPath() string {
+func GetBinaryPath(binary string) string {
 	var path string
-	if strings.Contains(os.Args[0], "terraform-credentials-terracreds.exe") {
-		path = strings.Replace(os.Args[0], "terraform-credentials-terracreds.exe", "", -1)
-	} else if strings.Contains(os.Args[0], "terracreds.test.exe") {
-		path = strings.Replace(os.Args[0], "terracreds.test.exe", "", -1)
+	if strings.Contains(binary, "terraform-credentials-terracreds.exe") {
+		path = strings.Replace(binary, "terraform-credentials-terracreds.exe", "", -1)
+	} else if strings.Contains(binary, "terracreds.test.exe") {
+		path = strings.Replace(binary, "terracreds.test.exe", "", -1)
 	} else {
-		path = strings.Replace(os.Args[0], "terracreds.exe", "", -1)
+		path = strings.Replace(binary, "terracreds.exe", "", -1)
 	}
 	return path
 }
@@ -96,7 +96,7 @@ func WriteToLog(path string, data string, level string) error {
 // CreateConfigFile creates a default terracreds config file if one does not
 // exist in the same path as the binary
 func CreateConfigFile() error {
-	bin := GetBinaryPath()
+	bin := GetBinaryPath(os.Args[0])
 	path := bin + "config.yaml"
 
 	if _, err := os.Stat(path); err != nil {
@@ -116,7 +116,7 @@ logging:
 func LoadConfig(cfg *Config) error {
 	CreateConfigFile()
 
-	bin := GetBinaryPath()
+	bin := GetBinaryPath(os.Args[0])
 	path := bin + "config.yaml"
 	f, err := os.Open(string(path))
 	CheckError(err)
