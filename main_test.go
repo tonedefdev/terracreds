@@ -6,10 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/MakeNowJust/heredoc"
 	"github.com/danieljoos/wincred"
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v2"
 )
 
 func TestWriteToFile(t *testing.T) {
@@ -62,47 +60,25 @@ func TestGetBinaryPath(t *testing.T) {
 }
 
 func TestCreateConfigFile(t *testing.T) {
-	bin := GetBinaryPath(os.Args[0])
-	path := bin + "config.yaml"
-	var doc string
-
-	if _, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			doc = heredoc.Doc(`
-logging:
-  enabled: false
-  path:`)
-			WriteToFile(path, doc)
-		}
-	}
-
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		t.Errorf("Unable to read the config file at '%s'", path)
+	var cfg Config
+	CreateConfigFile()
+	LoadConfig(&cfg)
+	if cfg.Logging.Enabled != false {
+		t.Errorf("Expected logging enabled 'false' got 'true'")
 	} else {
-		if string(data) != doc {
-			t.Errorf("Expected config '%s' got '%s'", doc, string(data))
-		}
-		t.Logf("Read config '%s' from file '%s'", string(data), path)
+		t.Logf("Correctly created the config file")
 	}
 }
 
 func TestLoadConfig(t *testing.T) {
 	var cfg Config
 	CreateConfigFile()
-
-	bin := GetBinaryPath(os.Args[0])
-	path := bin + "config.yaml"
-	file, err := os.Open(string(path))
-	CheckError(err)
-	defer file.Close()
-
-	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(&cfg)
+	LoadConfig(&cfg)
 	if cfg.Logging.Enabled != false {
 		t.Errorf("Expected logging enabled 'false' got 'true'")
+	} else {
+		t.Logf("Correctly loaded the config file")
 	}
-	t.Logf("Correctly loaded the config file")
 }
 
 func TestGenerateTerracreds(t *testing.T) {
