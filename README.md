@@ -3,7 +3,7 @@ A credential helper for Terraform Cloud/Enterprise that allows secure storage of
 
 #### Currently supported Operating Systems:
 - [x] Windows (Credential Manager)
-- [ ] MacOS (Keychain)
+- [x] MacOS (Keychain)
 - [ ] Linux (ksecretservice or gnome-keyring)
 
 *The MacOS and Linux versions are currently in development. If you'd like to support the project please feel free to submit a PR*
