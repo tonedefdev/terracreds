@@ -7,5 +7,6 @@ require (
 	github.com/danieljoos/wincred v1.1.0
 	github.com/fatih/color v1.9.0
 	github.com/urfave/cli/v2 v2.2.0
+	github.com/zalando/go-keyring v0.1.0
 	gopkg.in/yaml.v2 v2.3.0
 )

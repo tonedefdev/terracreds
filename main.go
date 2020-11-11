@@ -163,7 +163,7 @@ func CreateCredential(c *cli.Context, hostname string, apiToken string) {
 
 	if runtime.GOOS == "darwin" {
 		err := keyring.Set(hostname, string(user.Username), apiToken)
-		if err != nil {
+		if err == nil {
 			fmt.Fprintf(color.Output, "%s: Created\\updated the credential object '%s'\n", color.GreenString("SUCCESS"), hostname)
 		} else {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to create this credential\n", color.RedString("ERROR"))
@@ -195,8 +195,6 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string) {
 
 	if runtime.GOOS == "darwin" {
 		err := keyring.Delete(hostname, string(user.Username))
-		fmt.Println(string(user.Username))
-		fmt.Println(err)
 		if err == nil {
 			msg := "The credential object '" + hostname + "' has been removed"
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
@@ -324,7 +322,16 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					CreateCredential(c, c.String("hostname"), c.String("apiToken"))
+					if len(os.Args) > 1 {
+						msg := "You must pass in '-n <hostname> -t <token>' to create a credential"
+						if cfg.Logging.Enabled == true {
+							logPath = cfg.Logging.Path + "\\terracreds.log"
+							WriteToLog(logPath, msg, "ERROR: ")
+						}
+						fmt.Fprintf(color.Output, "%s: %s \n", color.YellowString("WARNING"), msg)
+					} else {
+						CreateCredential(c, c.String("hostname"), c.String("apiToken"))
+					}
 					return nil
 				},
 			},
@@ -340,8 +347,17 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					hostname := c.String("hostname")
-					DeleteCredential(c, cfg, hostname)
+					if len(os.Args) > 2 {
+						msg := "A hostname was not expected here. Did you mean"
+						if cfg.Logging.Enabled == true {
+							logPath = cfg.Logging.Path + "\\terracreds.log"
+							WriteToLog(logPath, msg, "WARNING: ")
+						}
+						fmt.Fprintf(color.Output, "%s: %s 'terracreds delete -n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
+					} else {
+						hostname := c.String("hostname")
+						DeleteCredential(c, cfg, hostname)
+					}
 					return nil
 				},
 			},
