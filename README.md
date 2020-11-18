@@ -1,5 +1,5 @@
 # Terracreds
-A credential helper for Terraform Cloud/Enterprise that allows secure storage of your API token within the operating system's vault instead of in a plain text configuration file. We all know that storing sensitive secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community.
+A credential helper for Terraform Cloud/Enterprise that allows secure storage of your API token within the operating system's vault instead of in a plain text configuration file. Storing secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to help enable stronger security practices.
 
 #### Currently supported Operating Systems:
 - [x] Windows (Credential Manager)
@@ -10,12 +10,12 @@ A credential helper for Terraform Cloud/Enterprise that allows secure storage of
 
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
-```powershell
+```shell
 choco install terracreds -y
 ```
 
 Once installed run the following command to verify `terracreds` was installed properly:
-```powerhsell
+```shell
 terracreds -v
 ```
 
@@ -32,19 +32,19 @@ Once the files have been downloaded navigate to the `terracreds` directory and t
 go install -v
 ```
 
-Navigate to the `bin` directory and you should see the `terracreds.exe` binary. Copy this to any directory of your choosing. Be sure to add the directory on `$env:PATH` to make using the application easier.
+Navigate to the `bin` directory and you should see the `terracreds.exe` binary. Copy this to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier.
 
 ## Initial Configuration
-In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins`
+In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS `$HOME/.terraformrc`
 
-To make things as simple as possible we created a helper command to do this. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
-```powershell
+To make things as simple as possible we created a helper command to generate everthing needed to use the app. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
+```shell
 terracreds generate
 ```
 
-This command will generate the binary as `terraform-credentials-terracreds.exe` which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
+This command will generate the binary as `terraform-credentials-terracreds.exe` for Windows or `terraform-credentials-terracreds` for macOS which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
 
-In addition to the binary and plugin a `terraform.rc` file is required with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary. However, if you already have a `terraform.rc` file you will need to add the following block to your `terraform.rc` file instead:
+In addition to the binary and plugin a `terraform.rc` file is required for Windows or `.terraformrc` for macOS with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` or a `.terraformrc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary for your OS. However, if you already have a `terraform.rc` or `.terraformrc` file you will need to add the following block to your file instead:
 
 ```hcl
 credentials_helper "terracreds" {
@@ -52,9 +52,9 @@ credentials_helper "terracreds" {
 }
 ```
 
-Once you have moved all of your tokens from the `terraform.rc` file to the `Windows Credential Manager` via `terracreds` you can remove the tokens from the `terraform.rc` file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens. Be sure to remove your tokens from the `terraform.rc` file once you have used the `create` command to create the credentials in `terracreds` so you can actually leverage the credential helper.
+Once you have moved all of your tokens from this file to the `Windows Credential Manager` or `KeyChain` via `terracreds` you can remove the tokens from the file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens, so be sure to remove your tokens from this file once you have used the `create` command to create the credentials in `terracreds` so you can actually leverage the credential helper.
 
-The last configuration step is to add a Terraform environment variable that points to the path fo the `terraform.rc` file. Terraform's documentation states that on Windows the default location is `%APPDATA%\Roaming\terraform.d\` however in our testing this wasn't the case. You can set the environment variable one of two ways:
+The last configuration step is specific to Windows. You will need to add a Terraform environment variable that points to the path fo the `terraform.rc` file. Terraform's documentation states that on Windows the default location is `%APPDATA%\terraform.d\` however in our testing this wasn't the case. You can set the environment variable one of two ways:
 
 Add the following to your PowerShell profile (`Microsoft.PowerShell_profile.ps1`) to persist this environment variable each time a PowerShell session is launched:
 ```powershell
@@ -74,18 +74,18 @@ For Terraform to properly use the credentials stored in your credential manager 
 The value for the password will correspond to the API token associated for that specific Terraform Cloud or Enterprise server.
 
 To store the credentials you'll need to run the following command:
-```powershell
+```shell
 terracreds create -n my.terraform.com -t yourAPITokenString
 ```
 
 If all went well you should receive a success message:
 ```
-Successfully created the credential object
+SUCCESS: Created\updated the credential object 'my.terraform.com'
 ```
 
 ## Verifying Credentials
 When Terraform leverages `terracreds` as the credential provider it will run the following command to get the credentials value:
-```powershell
+```shell
 terraform-credentials-terracreds get my.terraform.com
 ```
 
@@ -101,19 +101,35 @@ Example output:
 
 ## Updating Credentials
 To update a credential simply run the same create command and it will update the token instead:
-```powershell
+```shell
 terracreds create -n my.terraform.com -t reallybignewtoken
 ```
 
 ## Deleting Credentials
 You can delete the credential object at any time by running:
-```powershell
+```shell
 terracreds delete -n my.terraform.com
 ```
 
 ## Protection
-In order to add some layers of protection `terracreds` adds a username to the credential object, and checks to ensure that the user requesting access to the token is the same user as the token's creator. This means that only the user account used to create the token can view the token from `terracreds` which ensures that your token can only be read by your user account. Any attempt to access or modify this token from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts.
+In order to add some protection `terracreds` adds a username to the credential object, and checks to ensure that the user requesting access to the token is the same user as the token's creator. This means that only the user account used to create the token can view the token from `terracreds` which ensures that the token can only be read by the account used to create it. Any attempt to access or modify this token from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts.
 
 ## Logging
-Wherever either binary is stored `terracreds.exe` or `terraform-credential-terracreds.exe` a `config.yaml` file is generated on first launch of the binary. Currently, this configuration file only enables/disables logging and sets the log path. If logging is enabled you'll find the log named `terracreds.log` at the provided path. 
->It's important to note that you'll have two configuration files due to Terraform requiring that the credential helper have a very specific binary name, so when troubleshooting credential issues with Terraform remember to setup the configuration file in the `%APPDATA%\Roaming\terraform.d\plugins` directory.
+Wherever either binary is stored `terracreds` or `terraform-credential-terracreds` a `config.yaml` file is generated on first launch of the binary. Currently, this configuration file only enables/disables logging and sets the log path. If logging is enabled you'll find the log named `terracreds.log` at the provided path. 
+>It's important to note that you'll have two configuration files due to Terraform requiring that the credential helper have a very specific binary name, so when troubleshooting credential issues with Terraform remember to setup the configuration file in the `%APPDATA%\terraform.d\plugins` directory for Windows and `$HOME/.terraformrc` directory for macOS.
+
+To enable logging for Windows setup the `config.yaml` as follows:
+```yaml
+logging:
+  enabled: true
+  path: C:\Temp\
+```
+
+To enable logging for macOS:
+```yaml
+logging:
+  enabled: true
+  path: /usr/
+```
+
+The log will be located at the defined path as `terracreds.log`

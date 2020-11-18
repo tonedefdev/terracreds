@@ -185,7 +185,7 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string) {
 			msg := "The credential object '" + hostname + "' has been removed"
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 			if cfg.Logging.Enabled == true {
-				logPath := cfg.Logging.Path + "\\terracreds.log"
+				logPath := cfg.Logging.Path + "terracreds.log"
 				WriteToLog(logPath, msg, "INFO: ")
 			}
 		} else {
@@ -198,6 +198,10 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string) {
 		if err == nil {
 			msg := "The credential object '" + hostname + "' has been removed"
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
+			if cfg.Logging.Enabled == true {
+				logPath := cfg.Logging.Path + "terracreds.log"
+				WriteToLog(logPath, msg, "INFO: ")
+			}
 		} else {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 		}
@@ -243,7 +247,7 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 
 	if runtime.GOOS == "windows" {
 		if cfg.Logging.Enabled == true {
-			logPath = cfg.Logging.Path + "\\terracreds.log"
+			logPath = cfg.Logging.Path + "terracreds.log"
 			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
 			WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
 		}
@@ -268,8 +272,17 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 	}
 
 	if runtime.GOOS == "darwin" {
+		if cfg.Logging.Enabled == true {
+			logPath = cfg.Logging.Path + "terracreds.log"
+			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
+			WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
+		}
+
 		secret, err := keyring.Get(hostname, string(user.Username))
 		if err != nil {
+			if cfg.Logging.Enabled == true {
+				WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
+			}
 			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 		} else {
 			response := &CredentialResponse{
@@ -277,6 +290,10 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 			}
 			responseA, _ := json.Marshal(response)
 			fmt.Println(string(responseA))
+
+			if cfg.Logging.Enabled == true {
+				WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+			}
 		}
 	}
 }
@@ -302,7 +319,7 @@ func main() {
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
 		UsageText: "terracreds create -n api.terraform.com -t sampleApiTokenString",
-		Version:   "1.0.1",
+		Version:   "1.0.2",
 		Commands: []*cli.Command{
 			&cli.Command{
 				Name:  "create",
@@ -322,10 +339,10 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if len(os.Args) < 2 {
+					if !strings.Contains(os.Args[2], "-n") || !strings.Contains(os.Args[2], "-t") {
 						msg := "You must pass in '-n <hostname> -t <token>' to create a credential"
 						if cfg.Logging.Enabled == true {
-							logPath = cfg.Logging.Path + "\\terracreds.log"
+							logPath = cfg.Logging.Path + "terracreds.log"
 							WriteToLog(logPath, msg, "ERROR: ")
 						}
 						fmt.Fprintf(color.Output, "%s: %s \n", color.YellowString("WARNING"), msg)
@@ -347,10 +364,10 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if len(os.Args) > 2 {
+					if !strings.Contains(os.Args[2], "-n") {
 						msg := "A hostname was not expected here. Did you mean"
 						if cfg.Logging.Enabled == true {
-							logPath = cfg.Logging.Path + "\\terracreds.log"
+							logPath = cfg.Logging.Path + "terracreds.log"
 							WriteToLog(logPath, msg, "WARNING: ")
 						}
 						fmt.Fprintf(color.Output, "%s: %s 'terracreds delete -n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
@@ -398,7 +415,7 @@ func main() {
 					} else {
 						msg := "A hostname was expected after the 'get' command but no argument was provided"
 						if cfg.Logging.Enabled == true {
-							logPath = cfg.Logging.Path + "\\terracreds.log"
+							logPath = cfg.Logging.Path + "terracreds.log"
 							WriteToLog(logPath, msg, "ERROR: ")
 						}
 						fmt.Fprintf(color.Output, "%s: %s\n", color.RedString("ERROR"), msg)
