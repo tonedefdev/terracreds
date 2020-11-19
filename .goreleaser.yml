@@ -1,10 +1,11 @@
-release:
-  github:
-    owner: tonedefdev
-    name: main
 builds:
 - goos:
   - darwin
   - windows
   goarch:
   - amd64
+  binary: terracreds
+release:
+  github:
+    owner: tonedefdev
+    name: main
