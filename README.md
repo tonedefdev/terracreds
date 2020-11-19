@@ -132,4 +132,4 @@ logging:
   path: /usr/
 ```
 
-The log will be located at the defined path as `terracreds.log`
+The log will be located at the defined path as `terracreds.log` 
