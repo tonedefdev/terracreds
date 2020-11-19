@@ -339,13 +339,8 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if !strings.Contains(os.Args[2], "-n") || !strings.Contains(os.Args[2], "-t") {
-						msg := "You must pass in '-n <hostname> -t <token>' to create a credential"
-						if cfg.Logging.Enabled == true {
-							logPath = cfg.Logging.Path + "terracreds.log"
-							WriteToLog(logPath, msg, "ERROR: ")
-						}
-						fmt.Fprintf(color.Output, "%s: %s \n", color.YellowString("WARNING"), msg)
+					if len(os.Args) == 2 {
+						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
 					} else {
 						CreateCredential(c, c.String("hostname"), c.String("apiToken"))
 					}
@@ -364,7 +359,9 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if !strings.Contains(os.Args[2], "-n") {
+					if len(os.Args) == 2 {
+						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
+					} else if !strings.Contains(os.Args[2], "-n") {
 						msg := "A hostname was not expected here. Did you mean"
 						if cfg.Logging.Enabled == true {
 							logPath = cfg.Logging.Path + "terracreds.log"
