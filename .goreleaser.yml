@@ -1,0 +1,10 @@
+release:
+  github:
+    owner: tonedefdev
+    name: main
+builds:
+  goos:
+  - darwin
+  - windows
+  goarch:
+  - amd64
