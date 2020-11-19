@@ -5,10 +5,6 @@ builds:
   goarch:
   - amd64
   binary: terracreds
-release:
-  github:
-    owner: tonedefdev
-    name: main
 archives:
 - name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   format_overrides:
