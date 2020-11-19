@@ -3,7 +3,7 @@ release:
     owner: tonedefdev
     name: main
 builds:
-  goos:
+- goos:
   - darwin
   - windows
   goarch:
