@@ -82,7 +82,7 @@ terracreds create -n my.terraform.com -t yourAPITokenString
 
 If all went well you should receive a success message:
 ```
-SUCCESS: Created\updated the credential object 'my.terraform.com'
+SUCCESS: Created the credential object 'my.terraform.com'
 ```
 
 ## Verifying Credentials
@@ -105,6 +105,11 @@ Example output:
 To update a credential simply run the same create command and it will update the token instead:
 ```shell
 terracreds create -n my.terraform.com -t reallybignewtoken
+```
+
+If the token was updated successfully the following message is returned:
+```
+SUCCESS: Updated the credential object 'my.terraform.com'
 ```
 
 ## Deleting Credentials

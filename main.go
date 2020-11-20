@@ -149,22 +149,38 @@ func CreateCredential(c *cli.Context, hostname string, apiToken string) {
 	CheckError(err)
 
 	if runtime.GOOS == "windows" {
+		var method string
+		_, err := wincred.GetGenericCredential(hostname)
+		if err != nil {
+			method = "Created"
+		} else {
+			method = "Updated"
+		}
+
 		cred := wincred.NewGenericCredential(hostname)
 		cred.CredentialBlob = []byte(apiToken)
 		cred.UserName = string(user.Username)
 		err = cred.Write()
 
 		if err == nil {
-			fmt.Fprintf(color.Output, "%s: Created\\updated the credential object '%s'\n", color.GreenString("SUCCESS"), hostname)
+			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 		} else {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to create this credential\n", color.RedString("ERROR"))
 		}
 	}
 
 	if runtime.GOOS == "darwin" {
-		err := keyring.Set(hostname, string(user.Username), apiToken)
+		var method string
+		_, err := keyring.Get(hostname, string(user.Username))
+		if err != nil {
+			method = "Created"
+		} else {
+			method = "Updated"
+		}
+
+		err = keyring.Set(hostname, string(user.Username), apiToken)
 		if err == nil {
-			fmt.Fprintf(color.Output, "%s: Created\\updated the credential object '%s'\n", color.GreenString("SUCCESS"), hostname)
+			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 		} else {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to create this credential\n", color.RedString("ERROR"))
 		}
