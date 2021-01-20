@@ -226,26 +226,33 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string) {
 
 // GenerateTerracreds creates the binary to use this package as a credential helper
 // and optionally the terraform.rc file
-func GenerateTerracreds(c *cli.Context, path string, tfUser string) {
+func GenerateTerracreds(c *cli.Context) {
 	var cliConfig string
 	var tfPlugins string
 	var binary string
 
 	if runtime.GOOS == "windows" {
-		cliConfig = tfUser + "\\terraform.rc"
-		tfPlugins = tfUser + "\\plugins"
+		userProfile := os.Getenv("USERPROFILE")
+		if c.Bool("windows-legacy-cli-config") == true {
+			cliConfig = userProfile + "\\AppData\\Roaming\\terraform.rc"
+		} else {
+			cliConfig = userProfile + "\\AppData\\Roaming\\terraform.d\\terraform.rc"
+		}
+
+		tfPlugins = userProfile + "\\AppData\\Roaming\\terraform.d\\plugins"
 		binary = tfPlugins + "\\terraform-credentials-terracreds.exe"
 	}
 
 	if runtime.GOOS == "darwin" {
-		cliConfig = os.Getenv("HOME") + "/.terraformrc"
-		tfPlugins = tfUser + "/plugins"
+		userProfile := os.Getenv("HOME")
+		cliConfig = userProfile + "/.terraformrc"
+		tfPlugins = userProfile + "/plugins"
 		binary = tfPlugins + "/terraform-credentials-terracreds"
 	}
 
 	NewDirectory(tfPlugins)
 	CopyTerraCreds(binary)
-	if c.Bool("create-cli-config") == true {
+	if c.Bool("create-cli-config") == true || c.Bool("windows-legacy-cli-config") == true {
 		doc := heredoc.Doc(`
 		credentials_helper "terracreds" {
 			args = []
@@ -330,12 +337,13 @@ type CredentialResponse struct {
 func main() {
 	var cfg Config
 	var logPath string
+	version := "1.0.3"
 	LoadConfig(&cfg)
 	app := &cli.App{
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
 		UsageText: "terracreds create -n api.terraform.com -t sampleApiTokenString",
-		Version:   "1.0.2",
+		Version:   version,
 		Commands: []*cli.Command{
 			&cli.Command{
 				Name:  "create",
@@ -398,23 +406,16 @@ func main() {
 					&cli.BoolFlag{
 						Name:  "create-cli-config",
 						Value: false,
-						Usage: "Creates the Terraform CLI config with a terracreds credential helper block. This will overwrite the existing file if it already exists",
+						Usage: "Creates the Terraform CLI config with a terracreds credential helper block for Terraform 0.12 and newer. This will overwrite the existing file if it already exists.",
+					},
+					&cli.BoolFlag{
+						Name:  "windows-legacy-cli-config",
+						Value: false,
+						Usage: "Generates the terraform.rc file in the %APPDATA%\\Roaming directory instead of in the terraform.d directory to support versions of Terraform 0.11 and older on Windows OS",
 					},
 				},
 				Action: func(c *cli.Context) error {
-					var userProfile string
-					var tfUser string
-
-					if runtime.GOOS == "windows" {
-						userProfile = os.Getenv("USERPROFILE")
-						tfUser = userProfile + "\\AppData\\Roaming\\terraform.d"
-					}
-
-					if runtime.GOOS == "darwin" {
-						userProfile = os.Getenv("HOME")
-						tfUser = userProfile + "/.terraform.d"
-					}
-					GenerateTerracreds(c, userProfile, tfUser)
+					GenerateTerracreds(c)
 					return nil
 				},
 			},

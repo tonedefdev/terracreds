@@ -50,7 +50,11 @@ terracreds generate
 
 This command will generate the binary as `terraform-credentials-terracreds.exe` for Windows or `terraform-credentials-terracreds` for macOS which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
 
-In addition to the binary and plugin a `terraform.rc` file is required for Windows or `.terraformrc` for macOS with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` or a `.terraformrc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary for your OS. However, if you already have a `terraform.rc` or `.terraformrc` file you will need to add the following block to your file instead:
+In addition to the binary and plugin a `terraform.rc` file is required for Windows or `.terraformrc` for macOS with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` or a `.terraformrc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary for your OS.
+
+> **IMPORTANT NOTE**: If you're running a version of Terraform 0.11 or older on `Windows` you'll need to pass in `--windows-legacy-cli-config` instead of `--create-cli-config` as the directory where Terraform looks for the `terraform.rc` file changed with version Terraform 0.12 and newer. In Terraform 0.11 the binary looks for this file in `%APPDATA%\terraform.rc` instead of `%APPDATA%\terraform.d\terraform.rc`
+
+However, if you already have a `terraform.rc` or `.terraformrc` file you will need to add the following block to your file instead:
 
 ```hcl
 credentials_helper "terracreds" {
