@@ -26,8 +26,6 @@ terracreds -v
 We are currently working on a `homebrew` package, however, to install the package simply download our latest release from this repository, extract the package, and then place it in a directory available on `$HOME`
 
 ## Manual Install
-Before downloading or installing from source set your `$env:GOPATH` to the root directory of where you plan on downloading the source files. Once completed navigate to that directory.
-
 Download the source files by entering the following command:
 ```go
 go get github.com/tonedefev/terracreds 
