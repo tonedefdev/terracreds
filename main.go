@@ -345,9 +345,10 @@ func main() {
 		UsageText: "terracreds create -n api.terraform.com -t sampleApiTokenString",
 		Version:   version,
 		Commands: []*cli.Command{
-			&cli.Command{
-				Name:  "create",
-				Usage: "Create or update a credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
+			{
+				Name:    "create",
+				Aliases: []string{"store"},
+				Usage:   "Create or update a credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
@@ -371,9 +372,10 @@ func main() {
 					return nil
 				},
 			},
-			&cli.Command{
-				Name:  "delete",
-				Usage: "Delete a credential stored in the local operating system's credential manager",
+			{
+				Name:    "delete",
+				Aliases: []string{"forget"},
+				Usage:   "Delete a credential stored in the local operating system's credential manager",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
@@ -399,7 +401,7 @@ func main() {
 					return nil
 				},
 			},
-			&cli.Command{
+			{
 				Name:  "generate",
 				Usage: "Generate the folders and plugin binary required to leverage terracreds as a Terraform credential helper",
 				Flags: []cli.Flag{
@@ -419,7 +421,7 @@ func main() {
 					return nil
 				},
 			},
-			&cli.Command{
+			{
 				Name:  "get",
 				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
 				Action: func(c *cli.Context) error {
