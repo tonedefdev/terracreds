@@ -86,15 +86,16 @@ func TestGenerateTerracreds(t *testing.T) {
 	path := t.TempDir()
 	tfUser := path + "\\terraform.d"
 	NewDirectory(tfUser)
-	GenerateTerracreds(c, path, tfUser)
+	GenerateTerracreds(c)
 }
 
 func TestCreateCredential(t *testing.T) {
+	var cfg Config
 	var c *cli.Context
 	const hostname = "terracreds.test.io"
 	const apiToken = "9ZWRa0Ge0iQCtA.atlasv1.HpZAd8426rHFskeEFo3AzimnkfR1ldYy69zz0op0NJZ79et8nrgjw3lQfi0FyJ1o8iw"
 
-	CreateCredential(c, hostname, apiToken)
+	CreateCredential(c, hostname, apiToken, cfg)
 	cred, err := wincred.GetGenericCredential(hostname)
 	if err != nil {
 		t.Errorf("Expected credential object '%s' got '%s'", hostname, string(cred.CredentialBlob))

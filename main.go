@@ -407,12 +407,12 @@ func main() {
 	app := &cli.App{
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
-		UsageText: "terraform login",
+		UsageText: "Directly store credentials from Terraform using 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -t myAPItoken'",
 		Version:   version,
 		Commands: []*cli.Command{
 			{
 				Name:  "create",
-				Usage: "Manually crete or update a credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
+				Usage: "Manually create or update a credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
