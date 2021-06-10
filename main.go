@@ -245,6 +245,8 @@ func LogLevel(level string) string {
 		return "ERROR: "
 	case "SUCCESS":
 		return "SUCCESS: "
+	case "WARNING":
+		return "WARNING: "
 	default:
 		return ""
 	}
@@ -335,14 +337,14 @@ func GenerateTerracreds(c *cli.Context) {
 // object as required to be consumed by Terraform Cloud/Enterprise
 func GetCredential(c *cli.Context, cfg Config, hostname string) {
 	user, err := user.Current()
-	var logPath string
 	CheckError(err)
 
 	if runtime.GOOS == "windows" {
 		if cfg.Logging.Enabled == true {
-			logPath = cfg.Logging.Path + "terracreds.log"
-			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
-			WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
+			msg := fmt.Sprintf("- terraform server: %s", hostname)
+			Logging(cfg, msg, "INFO")
+			msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
+			Logging(cfg, msg, "INFO")
 		}
 
 		cred, err := wincred.GetGenericCredential(hostname)
@@ -354,11 +356,13 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 			fmt.Println(string(responseA))
 
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+				msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
+				Logging(cfg, msg, "INFO")
 			}
 		} else {
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
+				msg := fmt.Sprintf("- access was denied for user: %s", string(user.Username))
+				Logging(cfg, msg, "ERROR")
 			}
 			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 		}
@@ -366,15 +370,17 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		if cfg.Logging.Enabled == true {
-			logPath = cfg.Logging.Path + "terracreds.log"
-			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
-			WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
+			msg := fmt.Sprintf("- terraform server: %s", hostname)
+			Logging(cfg, msg, "INFO")
+			msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
+			Logging(cfg, msg, "INFO")
 		}
 
 		secret, err := keyring.Get(hostname, string(user.Username))
 		if err != nil {
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
+				msg := fmt.Sprintf("- access was denied for user: %s", string(user.Username))
+				Logging(cfg, msg, "ERROR")
 			}
 			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 		} else {
@@ -385,7 +391,8 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 			fmt.Println(string(responseA))
 
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+				msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
+				Logging(cfg, msg, "INFO")
 			}
 		}
 	}
@@ -455,12 +462,11 @@ func main() {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
 					} else if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--hostname") {
-						msg := "A hostname was not expected here. Did you mean"
+						msg := fmt.Sprintf("A hostname was not expected here: %s", os.Args[2])
 						if cfg.Logging.Enabled == true {
-							logPath := cfg.Logging.Path + "terracreds.log"
-							WriteToLog(logPath, msg, "WARNING: ")
+							Logging(cfg, msg, "WARNING")
 						}
-						fmt.Fprintf(color.Output, "%s: %s 'terracreds delete --hostname/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
+						fmt.Fprintf(color.Output, "%s: %s Did you mean `terracreds delete --hostname/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
 					} else {
 						hostname := c.String("hostname")
 						command := os.Args[1]

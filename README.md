@@ -12,8 +12,6 @@ We all know storing secrets in plain text can pose major security threats, and T
 - [x] MacOS (Keychain)
 - [x] Linux (ksecretservice or gnome-keyring)
 
-*The Linux version is currently in development. If you'd like to support the project please feel free to submit a PR*
-
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
 ```bash
@@ -39,7 +37,7 @@ it's the default in most distros. If it doesn't exist, you can create it through
 keyring frontend program [Seahorse](https://wiki.gnome.org/Apps/Seahorse):
 
  * Open `seahorse`
- * Go to **File > New > Password Keyring**
+ * Go to **+ > Password > Password Keyring**
  * Click **Continue**
  * When asked for a name, use: **login**
 
@@ -69,16 +67,16 @@ go install -v
 Navigate to the root of the project directory and you should see the `terracreds.exe` binary for Windows or `terracreds` for macOS. On Windows, copy the `.exe` to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier. On macOS we recommend you place the binary in `/usr/bin` as this directory should already be on the `$PATH` environment variable.
 
 ## Initial Configuration
-In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS `$HOME/.terraformrc`
+In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS and Linux `$HOME/.terraformrc`
 
 To make things as simple as possible we created a helper command to generate everthing needed to use the app. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
 ```bash
 terracreds generate
 ```
 
-This command will generate the binary as `terraform-credentials-terracreds.exe` for Windows or `terraform-credentials-terracreds` for macOS which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
+This command will generate the binary as `terraform-credentials-terracreds.exe` for Windows or `terraform-credentials-terracreds` for macOS and Linux which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
 
-In addition to the binary and plugin a `terraform.rc` file is required for Windows or `.terraformrc` for macOS with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` or a `.terraformrc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary for your OS.
+In addition to the binary and plugin a `terraform.rc` file is required for Windows or `.terraformrc` for macOS and Linux with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` or a `.terraformrc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary for your OS.
 
 However, if you already have a `terraform.rc` or `.terraformrc` file you will need to add the following block to your file instead:
 
@@ -88,7 +86,7 @@ credentials_helper "terracreds" {
 }
 ```
 
-Once you have moved all of your tokens from this file to the `Windows Credential Manager` or `KeyChain` via `terracreds` you can remove the tokens from the file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens, so be sure to remove your tokens from this file once you have used the `create` command to create the credentials in `terracreds` so you can actually leverage the credential helper.
+Once you have moved all of your tokens from this file to the `Windows Credential Manager` or `KeyChain` via `terracreds` you can remove the tokens from the file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens, so be sure to remove your tokens from this file once you have used the `create` or `terraform login` command to create the credentials in `terracreds` so you can actually leverage the credential helper.
 
 ## Storing Credentials
 For Terraform to properly use the credentials stored in your credential manager they need to be stored a specific way. The name of the credential object must be the domain name of the Terraform Cloud or Enterprise server. For instance `app.terraform.io` which is the default name `terraform login` will use.
@@ -160,7 +158,7 @@ In order to add some protection `terracreds` adds a username to the credential o
 
 ## Logging
 Wherever either binary is stored `terracreds` or `terraform-credential-terracreds` a `config.yaml` file is generated on first launch of the binary. Currently, this configuration file only enables/disables logging and sets the log path. If logging is enabled you'll find the log named `terracreds.log` at the provided path. 
->It's important to note that you'll have two configuration files due to Terraform requiring that the credential helper have a very specific binary name, so when troubleshooting credential issues with Terraform remember to setup the configuration file in the `%APPDATA%\terraform.d\plugins` directory for Windows and `$HOME/.terraformrc` directory for macOS.
+>It's important to note that you'll have two configuration files due to Terraform requiring that the credential helper have a very specific binary name, so when troubleshooting credential issues with Terraform remember to setup the configuration file in the `%APPDATA%\terraform.d\plugins` directory for Windows and `$HOME/.terraformrc` directory for macOS and Linux.
 
 To enable logging for Windows setup the `config.yaml` as follows:
 ```yaml
@@ -169,7 +167,7 @@ logging:
   path: C:\Temp\
 ```
 
-To enable logging for macOS:
+To enable logging for macOS and Linux:
 ```yaml
 logging:
   enabled: true
