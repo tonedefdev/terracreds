@@ -64,7 +64,7 @@ Once the files have been downloaded navigate to the `terracreds` directory in th
 go install -v
 ```
 
-Navigate to the root of the project directory and you should see the `terracreds.exe` binary for Windows or `terracreds` for macOS. On Windows, copy the `.exe` to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier. On macOS we recommend you place the binary in `/usr/bin` as this directory should already be on the `$PATH` environment variable.
+Navigate to the root of the project directory and you should see the `terracreds.exe` binary for Windows or `terracreds` for macOS and Linux. On Windows, copy the `.exe` to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier. On macOS and Linux we recommend you place the binary in `/usr/bin` as this directory should already be on the `$PATH` environment variable.
 
 ## Initial Configuration
 In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS and Linux `$HOME/.terraformrc`
