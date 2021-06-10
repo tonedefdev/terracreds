@@ -55,7 +55,7 @@ func GetBinaryPath(binary string) string {
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		if strings.Contains(binary, "terraform-credentials-terracreds") {
 			path = strings.Replace(binary, "terraform-credentials-terracreds", "", -1)
 		} else if strings.Contains(binary, "terracreds.test") {
@@ -190,7 +190,7 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		var method string
 		_, err := keyring.Get(hostname, string(user.Username))
 		if err != nil {
@@ -200,6 +200,10 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		}
 
 		if token == nil {
+			err = json.NewDecoder(os.Stdin).Decode(&apiToken)
+			if err != nil {
+				fmt.Print(err.Error())
+			}
 			err = keyring.Set(hostname, string(user.Username), apiToken.Token)
 		} else {
 			str := fmt.Sprintf("%v", token)
@@ -274,7 +278,7 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string, command strin
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		err := keyring.Delete(hostname, string(user.Username))
 		if err == nil {
 			msg := "- the credential object '" + hostname + "' has been removed"
@@ -309,7 +313,7 @@ func GenerateTerracreds(c *cli.Context) {
 		binary = tfPlugins + "\\terraform-credentials-terracreds.exe"
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
 		cliConfig = userProfile + "/.terraformrc"
 		tfPlugins = userProfile + "/plugins"
@@ -360,7 +364,7 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		if cfg.Logging.Enabled == true {
 			logPath = cfg.Logging.Path + "terracreds.log"
 			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
@@ -402,7 +406,7 @@ type CredentialResponse struct {
 
 func main() {
 	var cfg Config
-	version := "1.1.0"
+	version := "1.1.1"
 	LoadConfig(&cfg)
 	app := &cli.App{
 		Name:      "terracreds",

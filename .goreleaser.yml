@@ -2,6 +2,7 @@ builds:
 - goos:
   - darwin
   - windows
+  - linux
   goarch:
   - amd64
   binary: terracreds

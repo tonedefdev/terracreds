@@ -10,7 +10,7 @@ We all know storing secrets in plain text can pose major security threats, and T
 #### Currently supported Operating Systems:
 - [x] Windows (Credential Manager)
 - [x] MacOS (Keychain)
-- [ ] Linux (ksecretservice or gnome-keyring)
+- [x] Linux (ksecretservice or gnome-keyring)
 
 *The Linux version is currently in development. If you'd like to support the project please feel free to submit a PR*
 
@@ -25,7 +25,23 @@ Once installed run the following command to verify `terracreds` was installed pr
 terracreds -v
 ```
 ## macOS Install
-We are currently working on a `homebrew` package, however, to install the package simply download our latest release from this repository, extract the package, and then place it in a directory available on `$HOME`
+We are currently working on a `homebrew` package, however, to install the package simply download our latest release from this repository, 
+extract the package, and then place it in a directory available on `$HOME`
+
+## Linux Install
+You'll need to download the latest binary from our release page and place it on `$PATH` of your system.
+
+The `terracreds` Linux implementation depends on the [Secret Service][SecretService] dbus
+interface, which is provided by [GNOME Keyring](https://wiki.gnome.org/Projects/GnomeKeyring).
+
+It's expected that the default collection `login` exists in the keyring, because
+it's the default in most distros. If it doesn't exist, you can create it through the
+keyring frontend program [Seahorse](https://wiki.gnome.org/Apps/Seahorse):
+
+ * Open `seahorse`
+ * Go to **File > New > Password Keyring**
+ * Click **Continue**
+ * When asked for a name, use: **login**
 
 ## Manual Install
 Download the source files by entering the following command:
