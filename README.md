@@ -209,5 +209,5 @@ check to make sure that only a single instance of the daemon is running:
 ps -ef | grep gnome-keyring
 ```
 
-If more than one daemon is running, take note of the pid, and use `kill` to terminate the additional daemon. Try you previous command again
+If more than one daemon is running, take note of the pid, and use `kill` to terminate the additional daemon. Try your previous command again
 and it should now be working
