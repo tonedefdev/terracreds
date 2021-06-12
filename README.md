@@ -175,7 +175,7 @@ In order to add some protection `terracreds` adds a username to the credential o
 
 ## Logging
 Wherever either binary is stored `terracreds` or `terraform-credential-terracreds` a `config.yaml` file is generated on first launch of the binary. Currently, this configuration file only enables/disables logging and sets the log path. If logging is enabled you'll find the log named `terracreds.log` at the provided path 
->It's important to note that you'll have two configuration files due to Terraform requiring that the credential helper have a very specific binary name, so when troubleshooting credential issues with Terraform remember to setup the configuration file in the `%APPDATA%\terraform.d\plugins` directory for Windows and `$HOME/.terraform.d/.terraformrc` directory for macOS and Linux
+>It's important to note that you'll have two configuration files due to Terraform requiring that the credential helper have a very specific binary name, so when troubleshooting credential issues with Terraform remember to setup the configuration file in the `%APPDATA%\terraform.d\plugins` directory for Windows and `$HOME/.terraform.d/plugins` directory for macOS and Linux
 
 To enable logging for Windows setup the `config.yaml` as follows:
 ```yaml
