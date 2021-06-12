@@ -174,15 +174,14 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		err = cred.Write()
 
 		if err == nil {
-			msg := "- " + strings.ToLower(method) + " the credential object " + hostname
+			msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
 			Logging(cfg, msg, "SUCCESS")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -211,15 +210,14 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		}
 
 		if err == nil {
-			msg := "- " + strings.ToLower(method) + " the credential object " + hostname
+			msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
 			Logging(cfg, msg, "SUCCESS")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -263,16 +261,15 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string, command strin
 		if err == nil && cred.UserName == user.Username {
 			cred.Delete()
 
-			msg := "- the credential object '" + hostname + "' has been removed"
+			msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 			Logging(cfg, msg, "INFO")
 
 			if command == "delete" {
-				msg := "The credential object '" + hostname + "' has been removed"
+				msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 				fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if command == "delete" {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -283,16 +280,15 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string, command strin
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		err := keyring.Delete(hostname, string(user.Username))
 		if err == nil {
-			msg := "- the credential object '" + hostname + "' has been removed"
+			msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 			Logging(cfg, msg, "INFO")
 
 			if command == "delete" {
-				msg := "The credential object '" + hostname + "' has been removed"
+				msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 				fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if command == "delete" {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -317,8 +313,8 @@ func GenerateTerracreds(c *cli.Context) {
 
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
-		cliConfig = userProfile + "/.terraformrc"
-		tfPlugins = userProfile + "/plugins"
+		cliConfig = userProfile + "/.terraform.d/.terraformrc"
+		tfPlugins = userProfile + "/.terraform.d/plugins"
 		binary = tfPlugins + "/terraform-credentials-terracreds"
 	}
 
@@ -361,8 +357,7 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 			}
 		} else {
 			if cfg.Logging.Enabled == true {
-				msg := fmt.Sprintf("- access was denied for user: %s", string(user.Username))
-				Logging(cfg, msg, "ERROR")
+				Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 			}
 			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 		}
@@ -379,8 +374,7 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 		secret, err := keyring.Get(hostname, string(user.Username))
 		if err != nil {
 			if cfg.Logging.Enabled == true {
-				msg := fmt.Sprintf("- access was denied for user: %s", string(user.Username))
-				Logging(cfg, msg, "ERROR")
+				Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 			}
 			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 		} else {
