@@ -202,11 +202,12 @@ If you are having trouble viewing, deleting, or saving credentials on Linux syst
 ERROR: <TIMESTAMP> - failed to unlock correct collection '/org/freedesktop/secrets/collection/login'
 ```
 
-If the daemon has unlocked the collection but you're still getting prompted for credentials -- check to make sure that
-the only a single instance of the daemon is runnong:
+If the daemon has unlocked the collection but you're still getting prompted for credentials -- 
+check to make sure that only a single instance of the daemon is running:
 
 ```bash
 ps -ef | grep gnome-keyring
 ```
 
-If more than one daemon is running then take note of the pid and use `kill` to terminate the additional daemon and try again
+If more than one daemon is running, take note of the pid, and use `kill` to terminate the additional daemon. Try you previous command again
+and it should now be working
