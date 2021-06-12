@@ -265,7 +265,7 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string, command strin
 			Logging(cfg, msg, "INFO")
 
 			if command == "delete" {
-				msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
+				msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 				fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 			}
 		} else {
@@ -284,7 +284,7 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string, command strin
 			Logging(cfg, msg, "INFO")
 
 			if command == "delete" {
-				msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
+				msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 				fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 			}
 		} else {
