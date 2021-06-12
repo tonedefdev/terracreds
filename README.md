@@ -30,9 +30,9 @@ extract the package, and then place it in a directory available on `$HOME`
 You'll need to download the latest binary from our release page and place anywhere on `$PATH` of your system. You can also copy and run the following commands:
 
 ```bash
-wget https://github.com/tonedefdev/terracreds/releases/download/untagged-89883151b71ff5a64c29/terracreds_1.1.1_linux_amd64.tar.gz
-tar -xvf terracreds_1.1.1_linux_amd64.tar.gz
-sudo mv -f terracreds /usr/bin/terracreds
+wget https://github.com/tonedefdev/terracreds/releases/download/untagged-89883151b71ff5a64c29/terracreds_1.1.1_linux_amd64.tar.gz \
+tar -xvf terracreds_1.1.1_linux_amd64.tar.gz \
+sudo mv -f terracreds /usr/bin/terracreds \
 rm -f terracreds_1.1.1_linux_amd64.tar.gz
 ```
 
