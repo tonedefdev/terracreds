@@ -2,6 +2,7 @@ builds:
 - goos:
   - darwin
   - windows
+  - linux
   goarch:
   - amd64
   binary: terracreds
@@ -10,3 +11,5 @@ archives:
   format_overrides:
     - goos: windows
       format: zip
+- files:
+  - none*

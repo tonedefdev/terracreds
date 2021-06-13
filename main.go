@@ -55,7 +55,7 @@ func GetBinaryPath(binary string) string {
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		if strings.Contains(binary, "terraform-credentials-terracreds") {
 			path = strings.Replace(binary, "terraform-credentials-terracreds", "", -1)
 		} else if strings.Contains(binary, "terracreds.test") {
@@ -174,15 +174,14 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		err = cred.Write()
 
 		if err == nil {
-			msg := "- " + strings.ToLower(method) + " the credential object " + hostname
+			msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
 			Logging(cfg, msg, "SUCCESS")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -190,7 +189,7 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		var method string
 		_, err := keyring.Get(hostname, string(user.Username))
 		if err != nil {
@@ -200,6 +199,10 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		}
 
 		if token == nil {
+			err = json.NewDecoder(os.Stdin).Decode(&apiToken)
+			if err != nil {
+				fmt.Print(err.Error())
+			}
 			err = keyring.Set(hostname, string(user.Username), apiToken.Token)
 		} else {
 			str := fmt.Sprintf("%v", token)
@@ -207,15 +210,14 @@ func CreateCredential(c *cli.Context, hostname string, token interface{}, cfg Co
 		}
 
 		if err == nil {
-			msg := "- " + strings.ToLower(method) + " the credential object " + hostname
+			msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
 			Logging(cfg, msg, "SUCCESS")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if token != nil {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -241,6 +243,8 @@ func LogLevel(level string) string {
 		return "ERROR: "
 	case "SUCCESS":
 		return "SUCCESS: "
+	case "WARNING":
+		return "WARNING: "
 	default:
 		return ""
 	}
@@ -257,16 +261,15 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string, command strin
 		if err == nil && cred.UserName == user.Username {
 			cred.Delete()
 
-			msg := "- the credential object '" + hostname + "' has been removed"
+			msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 			Logging(cfg, msg, "INFO")
 
 			if command == "delete" {
-				msg := "The credential object '" + hostname + "' has been removed"
+				msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 				fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if command == "delete" {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -274,19 +277,18 @@ func DeleteCredential(c *cli.Context, cfg Config, hostname string, command strin
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		err := keyring.Delete(hostname, string(user.Username))
 		if err == nil {
-			msg := "- the credential object '" + hostname + "' has been removed"
+			msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 			Logging(cfg, msg, "INFO")
 
 			if command == "delete" {
-				msg := "The credential object '" + hostname + "' has been removed"
+				msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 				fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 			}
 		} else {
-			msg := "- you do not have permission to modify this credential"
-			Logging(cfg, msg, "ERROR")
+			Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 			if command == "delete" {
 				fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -309,10 +311,10 @@ func GenerateTerracreds(c *cli.Context) {
 		binary = tfPlugins + "\\terraform-credentials-terracreds.exe"
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
-		cliConfig = userProfile + "/.terraformrc"
-		tfPlugins = userProfile + "/plugins"
+		cliConfig = userProfile + "/.terraform.d/.terraformrc"
+		tfPlugins = userProfile + "/.terraform.d/plugins"
 		binary = tfPlugins + "/terraform-credentials-terracreds"
 	}
 
@@ -331,14 +333,14 @@ func GenerateTerracreds(c *cli.Context) {
 // object as required to be consumed by Terraform Cloud/Enterprise
 func GetCredential(c *cli.Context, cfg Config, hostname string) {
 	user, err := user.Current()
-	var logPath string
 	CheckError(err)
 
 	if runtime.GOOS == "windows" {
 		if cfg.Logging.Enabled == true {
-			logPath = cfg.Logging.Path + "terracreds.log"
-			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
-			WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
+			msg := fmt.Sprintf("- terraform server: %s", hostname)
+			Logging(cfg, msg, "INFO")
+			msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
+			Logging(cfg, msg, "INFO")
 		}
 
 		cred, err := wincred.GetGenericCredential(hostname)
@@ -350,27 +352,29 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 			fmt.Println(string(responseA))
 
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+				msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
+				Logging(cfg, msg, "INFO")
 			}
 		} else {
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
+				Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 			}
 			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 		}
 	}
 
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		if cfg.Logging.Enabled == true {
-			logPath = cfg.Logging.Path + "terracreds.log"
-			WriteToLog(logPath, "- terraform server: "+hostname, "INFO: ")
-			WriteToLog(logPath, "- user requesting access: "+string(user.Username), "INFO: ")
+			msg := fmt.Sprintf("- terraform server: %s", hostname)
+			Logging(cfg, msg, "INFO")
+			msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
+			Logging(cfg, msg, "INFO")
 		}
 
 		secret, err := keyring.Get(hostname, string(user.Username))
 		if err != nil {
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- access was denied for user: "+string(user.Username), "ERROR: ")
+				Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 			}
 			fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 		} else {
@@ -381,7 +385,8 @@ func GetCredential(c *cli.Context, cfg Config, hostname string) {
 			fmt.Println(string(responseA))
 
 			if cfg.Logging.Enabled == true {
-				WriteToLog(logPath, "- token was retrieved for: "+hostname, "INFO: ")
+				msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
+				Logging(cfg, msg, "INFO")
 			}
 		}
 	}
@@ -402,7 +407,7 @@ type CredentialResponse struct {
 
 func main() {
 	var cfg Config
-	version := "1.1.0"
+	version := "1.1.1"
 	LoadConfig(&cfg)
 	app := &cli.App{
 		Name:      "terracreds",
@@ -451,12 +456,11 @@ func main() {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
 					} else if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--hostname") {
-						msg := "A hostname was not expected here. Did you mean"
+						msg := fmt.Sprintf("A hostname was not expected here: %s", os.Args[2])
 						if cfg.Logging.Enabled == true {
-							logPath := cfg.Logging.Path + "terracreds.log"
-							WriteToLog(logPath, msg, "WARNING: ")
+							Logging(cfg, msg, "WARNING")
 						}
-						fmt.Fprintf(color.Output, "%s: %s 'terracreds delete --hostname/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
+						fmt.Fprintf(color.Output, "%s: %s Did you mean `terracreds delete --hostname/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
 					} else {
 						hostname := c.String("hostname")
 						command := os.Args[1]
