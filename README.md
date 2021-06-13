@@ -14,20 +14,26 @@ We all know storing secrets in plain text can pose major security threats, and T
 
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
-```bash
+```powershell
 choco install terracreds -y
 ```
 
 Once installed run the following command to verify `terracreds` was installed properly:
-```bash
+```powershell
 terracreds -v
 ```
+
+To upgrade `terracreds` to the latest version with Chocolatey run the the following command:
+```powershell
+choco upgrade terracreds -y
+```
+
 ## macOS Install
 We are currently working on a `homebrew` package, however, to install the package simply download our latest release from this repository, 
 extract the package, and then place it in a directory available on `$HOME`
 
 ## Linux Install
-You'll need to download the latest binary from our release page and place anywhere on `$PATH` of your system. You can also copy and run the following commands:
+You'll need to download the latest binary from our release page and place it anywhere on `$PATH` of your system. You can also copy and run the following commands:
 
 ```bash
 wget https://github.com/tonedefdev/terracreds/releases/download/untagged-89883151b71ff5a64c29/terracreds_1.1.1_linux_amd64.tar.gz \
@@ -58,7 +64,7 @@ You can verify that it's running properly with:
 ps -ef | grep 'gnome-keyring-daemon'
 ``` 
 
-## Manual Install
+## Install From Source
 Download the source files by entering the following command:
 ```go
 go get github.com/tonedefev/terracreds 
@@ -82,6 +88,9 @@ go install -v
 ```
 
 Navigate to the root of the project directory and you should see the `terracreds.exe` binary for Windows or `terracreds` for macOS and Linux. On Windows, copy the `.exe` to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier. On macOS and Linux we recommend you place the binary in `/usr/bin` as this directory should already be on the `$PATH` environment variable
+
+## Upgrading
+If you're upgrading to the latest version of `terracreds` from a previous version use one of the methods above to install the latest binary. Once successfully installed on your system you just need to run `terracreds generate` to copy the latest version to the correct `plugins` directory for your operating system
 
 ## Initial Configuration
 In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS and Linux `$HOME/.terraform.d/.terraformrc`
