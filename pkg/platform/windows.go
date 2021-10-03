@@ -14,13 +14,10 @@ import (
 	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
 )
 
-type Windows struct {
-	ApiToken api.CredentialResponse
-	Token    interface{}
-}
+type Windows struct{}
 
 // Create stores or updates a credential in the Windows Credential Manager
-func (w Windows) Create(cfg api.Config, hostname string, user *user.User) {
+func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User) {
 	var method string
 	_, err := wincred.GetGenericCredential(hostname)
 	if err != nil {
@@ -30,14 +27,14 @@ func (w Windows) Create(cfg api.Config, hostname string, user *user.User) {
 	}
 
 	cred := wincred.NewGenericCredential(hostname)
-	if w.Token == nil {
-		err = json.NewDecoder(os.Stdin).Decode(&w.ApiToken)
+	if token == nil {
+		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
 		if err != nil {
 			fmt.Print(err.Error())
 		}
-		cred.CredentialBlob = []byte(w.ApiToken.Token)
+		cred.CredentialBlob = []byte(api.CredentialResponse{}.Token)
 	} else {
-		str := fmt.Sprintf("%v", w.Token)
+		str := fmt.Sprintf("%v", token)
 		cred.CredentialBlob = []byte(str)
 	}
 
@@ -48,13 +45,13 @@ func (w Windows) Create(cfg api.Config, hostname string, user *user.User) {
 		msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
 		helpers.Logging(cfg, msg, "SUCCESS")
 
-		if w.Token != nil {
+		if token != nil {
 			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 		}
 	} else {
 		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
-		if w.Token != nil {
+		if token != nil {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 		}
 	}

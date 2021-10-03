@@ -15,9 +15,9 @@ import (
 	platform "github.com/tonedefdev/terracreds/pkg/platform"
 )
 
-// Terracreds implements these crud operations
+// terracreds interface implements these methods
 type terracreds interface {
-	Create(cfg api.Config, hostname string, user *user.User)
+	Create(cfg api.Config, hostname string, token interface{}, user *user.User)
 	Delete(cfg api.Config, command string, hostname string, user *user.User)
 	Get(cfg api.Config, hostname string, user *user.User)
 }
@@ -57,30 +57,15 @@ func main() {
 						helpers.CheckError(err)
 
 						if runtime.GOOS == "windows" {
-							opsys := platform.Windows{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Create(opsys, cfg, c.String("hostname"), user)
+							terracreds.Create(platform.Windows{}, cfg, c.String("hostname"), c.String("apiToken"), user)
 						}
 
 						if runtime.GOOS == "dawrin" {
-							opsys := platform.Mac{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Create(opsys, cfg, c.String("hostname"), user)
+							terracreds.Create(platform.Mac{}, cfg, c.String("hostname"), c.String("apiToken"), user)
 						}
 
 						if runtime.GOOS == "linux" {
-							opsys := platform.Linux{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Create(opsys, cfg, c.String("hostname"), user)
+							terracreds.Create(platform.Linux{}, cfg, c.String("hostname"), c.String("apiToken"), user)
 						}
 					}
 					return nil
@@ -111,30 +96,15 @@ func main() {
 						helpers.CheckError(err)
 
 						if runtime.GOOS == "windows" {
-							opsys := platform.Windows{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Delete(opsys, cfg, os.Args[1], c.String("hostname"), user)
+							terracreds.Delete(platform.Windows{}, cfg, os.Args[1], c.String("hostname"), user)
 						}
 
 						if runtime.GOOS == "dawrin" {
-							opsys := platform.Mac{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Delete(opsys, cfg, os.Args[1], c.String("hostname"), user)
+							terracreds.Delete(platform.Mac{}, cfg, os.Args[1], c.String("hostname"), user)
 						}
 
 						if runtime.GOOS == "linux" {
-							opsys := platform.Linux{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Delete(opsys, cfg, os.Args[1], c.String("hostname"), user)
+							terracreds.Delete(platform.Linux{}, cfg, os.Args[1], c.String("hostname"), user)
 						}
 					}
 					return nil
@@ -151,30 +121,15 @@ func main() {
 						helpers.CheckError(err)
 
 						if runtime.GOOS == "windows" {
-							opsys := platform.Windows{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Delete(opsys, cfg, os.Args[1], os.Args[2], user)
+							terracreds.Delete(platform.Windows{}, cfg, os.Args[1], os.Args[2], user)
 						}
 
 						if runtime.GOOS == "dawrin" {
-							opsys := platform.Mac{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Delete(opsys, cfg, os.Args[1], os.Args[2], user)
+							terracreds.Delete(platform.Mac{}, cfg, os.Args[1], os.Args[2], user)
 						}
 
 						if runtime.GOOS == "linux" {
-							opsys := platform.Linux{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Delete(opsys, cfg, os.Args[1], os.Args[2], user)
+							terracreds.Delete(platform.Linux{}, cfg, os.Args[1], os.Args[2], user)
 						}
 					}
 					return nil
@@ -204,30 +159,15 @@ func main() {
 						helpers.CheckError(err)
 
 						if runtime.GOOS == "windows" {
-							opsys := platform.Windows{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Get(opsys, cfg, os.Args[2], user)
+							terracreds.Get(platform.Windows{}, cfg, os.Args[2], user)
 						}
 
 						if runtime.GOOS == "dawrin" {
-							opsys := platform.Mac{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Get(opsys, cfg, os.Args[2], user)
+							terracreds.Get(platform.Mac{}, cfg, os.Args[2], user)
 						}
 
 						if runtime.GOOS == "linux" {
-							opsys := platform.Linux{
-								ApiToken: api.CredentialResponse{},
-								Token:    c.String("apiToken"),
-							}
-
-							terracreds.Get(opsys, cfg, os.Args[2], user)
+							terracreds.Get(platform.Linux{}, cfg, os.Args[2], user)
 						}
 					} else {
 						msg := "- hostname was expected after the 'get' command but no argument was provided"
@@ -248,30 +188,15 @@ func main() {
 						helpers.CheckError(err)
 
 						if runtime.GOOS == "windows" {
-							opsys := platform.Windows{
-								ApiToken: api.CredentialResponse{},
-								Token:    nil,
-							}
-
-							terracreds.Create(opsys, cfg, os.Args[2], user)
+							terracreds.Create(platform.Windows{}, cfg, os.Args[2], nil, user)
 						}
 
 						if runtime.GOOS == "dawrin" {
-							opsys := platform.Mac{
-								ApiToken: api.CredentialResponse{},
-								Token:    nil,
-							}
-
-							terracreds.Create(opsys, cfg, os.Args[2], user)
+							terracreds.Create(platform.Mac{}, cfg, os.Args[2], nil, user)
 						}
 
 						if runtime.GOOS == "linux" {
-							opsys := platform.Linux{
-								ApiToken: api.CredentialResponse{},
-								Token:    nil,
-							}
-
-							terracreds.Create(opsys, cfg, os.Args[2], user)
+							terracreds.Create(platform.Linux{}, cfg, os.Args[2], nil, user)
 						}
 					}
 					return nil

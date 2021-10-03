@@ -14,12 +14,9 @@ import (
 	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
 )
 
-type Mac struct {
-	ApiToken api.CredentialResponse
-	Token    interface{}
-}
+type Mac struct{}
 
-func (m Mac) Create(cfg api.Config, hostname string, user *user.User) {
+func (m Mac) Create(cfg api.Config, hostname string, token interface{}, user *user.User) {
 	var method string
 	_, err := keyring.Get(hostname, string(user.Username))
 	if err != nil {
@@ -28,14 +25,14 @@ func (m Mac) Create(cfg api.Config, hostname string, user *user.User) {
 		method = "Updated"
 	}
 
-	if m.Token == nil {
-		err = json.NewDecoder(os.Stdin).Decode(&m.ApiToken)
+	if token == nil {
+		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
 		if err != nil {
 			fmt.Print(err.Error())
 		}
-		err = keyring.Set(hostname, string(user.Username), m.ApiToken.Token)
+		err = keyring.Set(hostname, string(user.Username), api.CredentialResponse{}.Token)
 	} else {
-		str := fmt.Sprintf("%v", m.Token)
+		str := fmt.Sprintf("%v", token)
 		err = keyring.Set(hostname, string(user.Username), str)
 	}
 
@@ -43,13 +40,13 @@ func (m Mac) Create(cfg api.Config, hostname string, user *user.User) {
 		msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
 		helpers.Logging(cfg, msg, "SUCCESS")
 
-		if m.Token != nil {
+		if token != nil {
 			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 		}
 	} else {
 		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
-		if m.Token != nil {
+		if token != nil {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 		}
 	}
