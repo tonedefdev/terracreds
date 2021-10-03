@@ -3,11 +3,17 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"os/user"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/danieljoos/wincred"
 	"github.com/urfave/cli/v2"
+
+	api "github.com/tonedefdev/terracreds/api"
+	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
+	platform "github.com/tonedefdev/terracreds/pkg/platform"
 )
 
 func TestWriteToFile(t *testing.T) {
@@ -15,7 +21,7 @@ func TestWriteToFile(t *testing.T) {
 	const testText = "terracreds test sample text"
 	filePath := t.TempDir() + "\\" + fileName
 
-	test := WriteToFile(filePath, testText)
+	test := helpers.WriteToFile(filePath, testText)
 	if test != nil {
 		t.Errorf("Unable to write the test file at '%s'", filePath)
 	} else {
@@ -35,7 +41,7 @@ func TestNewDirectory(t *testing.T) {
 	const dirName = "terracreds"
 	filePath := t.TempDir() + "\\" + dirName
 
-	test := NewDirectory(filePath)
+	test := helpers.NewDirectory(filePath)
 	if test != nil {
 		t.Errorf("Unable to create the test directory at '%s'", filePath)
 	}
@@ -50,7 +56,7 @@ func TestGetBinaryPath(t *testing.T) {
 	paths[2] = argPath + "terracreds.exe"
 
 	for _, path := range paths {
-		binaryPath := GetBinaryPath(path)
+		binaryPath := helpers.GetBinaryPath(path, runtime.GOOS)
 		if binaryPath != argPath {
 			t.Errorf("Expected '%s' got '%s'", path, binaryPath)
 		}
@@ -60,9 +66,9 @@ func TestGetBinaryPath(t *testing.T) {
 }
 
 func TestCreateConfigFile(t *testing.T) {
-	var cfg Config
-	CreateConfigFile()
-	LoadConfig(&cfg)
+	var cfg api.Config
+	helpers.CreateConfigFile()
+	helpers.LoadConfig(&cfg)
 	if cfg.Logging.Enabled != false {
 		t.Errorf("Expected logging enabled 'false' got 'true'")
 	} else {
@@ -71,9 +77,9 @@ func TestCreateConfigFile(t *testing.T) {
 }
 
 func TestLoadConfig(t *testing.T) {
-	var cfg Config
-	CreateConfigFile()
-	LoadConfig(&cfg)
+	var cfg api.Config
+	helpers.CreateConfigFile()
+	helpers.LoadConfig(&cfg)
 	if cfg.Logging.Enabled != false {
 		t.Errorf("Expected logging enabled 'false' got 'true'")
 	} else {
@@ -85,17 +91,58 @@ func TestGenerateTerracreds(t *testing.T) {
 	var c *cli.Context
 	path := t.TempDir()
 	tfUser := path + "\\terraform.d"
-	NewDirectory(tfUser)
-	GenerateTerracreds(c)
+	helpers.NewDirectory(tfUser)
+	helpers.GenerateTerracreds(c)
 }
 
 func TestCreateCredential(t *testing.T) {
-	var cfg Config
+	var cfg api.Config
 	var c *cli.Context
 	const hostname = "terracreds.test.io"
 	const apiToken = "9ZWRa0Ge0iQCtA.atlasv1.HpZAd8426rHFskeEFo3AzimnkfR1ldYy69zz0op0NJZ79et8nrgjw3lQfi0FyJ1o8iw"
 
-	CreateCredential(c, hostname, apiToken, cfg)
+	user, err := user.Current()
+	helpers.CheckError(err)
+
+	if runtime.GOOS == "windows" {
+		os := platform.Windows{
+			ApiToken: api.CredentialResponse{},
+			Config:   cfg,
+			Context:  c,
+			Hostname: hostname,
+			Token:    apiToken,
+			User:     user,
+		}
+
+		api.Terracreds.Create(os)
+	}
+
+	if runtime.GOOS == "dawrin" {
+		os := platform.Mac{
+			ApiToken: api.CredentialResponse{},
+			Config:   cfg,
+			Context:  c,
+			Hostname: hostname,
+			Token:    apiToken,
+			User:     user,
+		}
+
+		api.Terracreds.Create(os)
+	}
+
+	if runtime.GOOS == "linux" {
+		os := platform.Linux{
+			ApiToken: api.CredentialResponse{},
+			Config:   cfg,
+			Context:  c,
+			Hostname: hostname,
+			Token:    apiToken,
+			User:     user,
+		}
+
+		api.Terracreds.Create(os)
+	}
+
 	cred, err := wincred.GetGenericCredential(hostname)
 	if err != nil {
 		t.Errorf("Expected credential object '%s' got '%s'", hostname, string(cred.CredentialBlob))

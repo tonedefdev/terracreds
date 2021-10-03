@@ -1,0 +1,3 @@
+logging:
+  enabled: false
+  path:
