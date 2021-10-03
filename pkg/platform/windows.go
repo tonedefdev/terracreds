@@ -9,7 +9,6 @@ import (
 
 	"github.com/danieljoos/wincred"
 	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
 
 	api "github.com/tonedefdev/terracreds/api"
 	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
@@ -17,24 +16,20 @@ import (
 
 type Windows struct {
 	ApiToken api.CredentialResponse
-	Command  string
-	Config   api.Config
-	Context  *cli.Context
-	Hostname string
 	Token    interface{}
-	User     *user.User
 }
 
-func (w Windows) Create() {
+// Create stores or updates a credential in the Windows Credential Manager
+func (w Windows) Create(cfg api.Config, hostname string, user *user.User) {
 	var method string
-	_, err := wincred.GetGenericCredential(w.Hostname)
+	_, err := wincred.GetGenericCredential(hostname)
 	if err != nil {
 		method = "Created"
 	} else {
 		method = "Updated"
 	}
 
-	cred := wincred.NewGenericCredential(w.Hostname)
+	cred := wincred.NewGenericCredential(hostname)
 	if w.Token == nil {
 		err = json.NewDecoder(os.Stdin).Decode(&w.ApiToken)
 		if err != nil {
@@ -46,18 +41,18 @@ func (w Windows) Create() {
 		cred.CredentialBlob = []byte(str)
 	}
 
-	cred.UserName = string(w.User.Username)
+	cred.UserName = string(user.Username)
 	err = cred.Write()
 
 	if err == nil {
-		msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), w.Hostname)
-		helpers.Logging(w.Config, msg, "SUCCESS")
+		msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
+		helpers.Logging(cfg, msg, "SUCCESS")
 
 		if w.Token != nil {
-			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, w.Hostname)
+			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 		}
 	} else {
-		helpers.Logging(w.Config, fmt.Sprintf("- %s", err), "ERROR")
+		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 		if w.Token != nil {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -65,50 +60,52 @@ func (w Windows) Create() {
 	}
 }
 
-func (w Windows) Delete() {
-	cred, err := wincred.GetGenericCredential(w.Hostname)
-	if err == nil && cred.UserName == w.User.Username {
+// Delete removes or forgets a Terraform API token from the Windows Credential Manager
+func (w Windows) Delete(cfg api.Config, command string, hostname string, user *user.User) {
+	cred, err := wincred.GetGenericCredential(hostname)
+	if err == nil && cred.UserName == user.Username {
 		cred.Delete()
 
-		msg := fmt.Sprintf("- the credential object '%s' has been removed", w.Hostname)
-		helpers.Logging(w.Config, msg, "INFO")
+		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
+		helpers.Logging(cfg, msg, "INFO")
 
-		if w.Command == "delete" {
-			msg := fmt.Sprintf("The credential object '%s' has been removed", w.Hostname)
+		if command == "delete" {
+			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
 	} else {
-		helpers.Logging(w.Config, fmt.Sprintf("- %s", err), "ERROR")
+		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
-		if w.Command == "delete" {
+		if command == "delete" {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 		}
 	}
 }
 
-func (w Windows) Get() {
-	if w.Config.Logging.Enabled == true {
-		msg := fmt.Sprintf("- terraform server: %s", w.Hostname)
-		helpers.Logging(w.Config, msg, "INFO")
-		msg = fmt.Sprintf("- user requesting access: %s", string(w.User.Username))
-		helpers.Logging(w.Config, msg, "INFO")
+// Get retrieves a Terraform API token stored in Windows Credential Manager
+func (w Windows) Get(cfg api.Config, hostname string, user *user.User) {
+	if cfg.Logging.Enabled == true {
+		msg := fmt.Sprintf("- terraform server: %s", hostname)
+		helpers.Logging(cfg, msg, "INFO")
+		msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
+		helpers.Logging(cfg, msg, "INFO")
 	}
 
-	cred, err := wincred.GetGenericCredential(w.Hostname)
-	if err == nil && cred.UserName == w.User.Username {
+	cred, err := wincred.GetGenericCredential(hostname)
+	if err == nil && cred.UserName == user.Username {
 		response := &api.CredentialResponse{
 			Token: string(cred.CredentialBlob),
 		}
 		responseA, _ := json.Marshal(response)
 		fmt.Println(string(responseA))
 
-		if w.Config.Logging.Enabled == true {
-			msg := fmt.Sprintf("- token was retrieved for: %s", w.Hostname)
-			helpers.Logging(w.Config, msg, "INFO")
+		if cfg.Logging.Enabled == true {
+			msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
+			helpers.Logging(cfg, msg, "INFO")
 		}
 	} else {
-		if w.Config.Logging.Enabled == true {
-			helpers.Logging(w.Config, fmt.Sprintf("- %s", err), "ERROR")
+		if cfg.Logging.Enabled == true {
+			helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 		}
 		fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	}

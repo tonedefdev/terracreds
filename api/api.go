@@ -12,10 +12,3 @@ type Config struct {
 type CredentialResponse struct {
 	Token string `json:"token"`
 }
-
-// Terracreds implements these crud operations
-type Terracreds interface {
-	Create()
-	Delete()
-	Get()
-}

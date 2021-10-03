@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/danieljoos/wincred"
 	"github.com/urfave/cli/v2"
 
 	api "github.com/tonedefdev/terracreds/api"
@@ -95,7 +94,7 @@ func TestGenerateTerracreds(t *testing.T) {
 	helpers.GenerateTerracreds(c)
 }
 
-func TestCreateCredential(t *testing.T) {
+func TestTerracreds(t *testing.T) {
 	var cfg api.Config
 	var c *cli.Context
 	const hostname = "terracreds.test.io"
@@ -105,47 +104,35 @@ func TestCreateCredential(t *testing.T) {
 	helpers.CheckError(err)
 
 	if runtime.GOOS == "windows" {
-		os := platform.Windows{
+		opsys := platform.Windows{
 			ApiToken: api.CredentialResponse{},
-			Config:   cfg,
-			Context:  c,
-			Hostname: hostname,
-			Token:    apiToken,
-			User:     user,
+			Token:    c.String("apiToken"),
 		}
 
-		api.Terracreds.Create(os)
+		terracreds.Create(opsys, cfg, c.String("hostname"), user)
+		terracreds.Get(opsys, cfg, hostname, user)
+		terracreds.Delete(opsys, cfg, os.Args[1], c.String("hostname"), user)
 	}
 
 	if runtime.GOOS == "dawrin" {
-		os := platform.Mac{
+		opsys := platform.Mac{
 			ApiToken: api.CredentialResponse{},
-			Config:   cfg,
-			Context:  c,
-			Hostname: hostname,
-			Token:    apiToken,
-			User:     user,
+			Token:    c.String("apiToken"),
 		}
 
-		api.Terracreds.Create(os)
+		terracreds.Create(opsys, cfg, c.String("hostname"), user)
+		terracreds.Get(opsys, cfg, hostname, user)
+		terracreds.Delete(opsys, cfg, os.Args[1], c.String("hostname"), user)
 	}
 
 	if runtime.GOOS == "linux" {
-		os := platform.Linux{
+		opsys := platform.Linux{
 			ApiToken: api.CredentialResponse{},
-			Config:   cfg,
-			Context:  c,
-			Hostname: hostname,
-			Token:    apiToken,
-			User:     user,
+			Token:    c.String("apiToken"),
 		}
 
-		api.Terracreds.Create(os)
+		terracreds.Create(opsys, cfg, c.String("hostname"), user)
+		terracreds.Get(opsys, cfg, hostname, user)
+		terracreds.Delete(opsys, cfg, os.Args[1], c.String("hostname"), user)
 	}
-
-	cred, err := wincred.GetGenericCredential(hostname)
-	if err != nil {
-		t.Errorf("Expected credential object '%s' got '%s'", hostname, string(cred.CredentialBlob))
-	}
-	cred.Delete()
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
 	"github.com/zalando/go-keyring"
 
 	api "github.com/tonedefdev/terracreds/api"
@@ -17,17 +16,12 @@ import (
 
 type Linux struct {
 	ApiToken api.CredentialResponse
-	Command  string
-	Config   api.Config
-	Context  *cli.Context
-	Hostname string
 	Token    interface{}
-	User     *user.User
 }
 
-func (l Linux) Create() {
+func (l Linux) Create(cfg api.Config, hostname string, user *user.User) {
 	var method string
-	_, err := keyring.Get(l.Hostname, string(l.User.Username))
+	_, err := keyring.Get(hostname, string(user.Username))
 	if err != nil {
 		method = "Created"
 	} else {
@@ -39,21 +33,21 @@ func (l Linux) Create() {
 		if err != nil {
 			fmt.Print(err.Error())
 		}
-		err = keyring.Set(l.Hostname, string(l.User.Username), l.ApiToken.Token)
+		err = keyring.Set(hostname, string(user.Username), l.ApiToken.Token)
 	} else {
 		str := fmt.Sprintf("%v", l.Token)
-		err = keyring.Set(l.Hostname, string(l.User.Username), str)
+		err = keyring.Set(hostname, string(user.Username), str)
 	}
 
 	if err == nil {
-		msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), l.Hostname)
-		helpers.Logging(l.Config, msg, "SUCCESS")
+		msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
+		helpers.Logging(cfg, msg, "SUCCESS")
 
 		if l.Token != nil {
-			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, l.Hostname)
+			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
 		}
 	} else {
-		helpers.Logging(l.Config, fmt.Sprintf("- %s", err), "ERROR")
+		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
 		if l.Token != nil {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
@@ -61,37 +55,37 @@ func (l Linux) Create() {
 	}
 }
 
-func (l Linux) Delete() {
-	err := keyring.Delete(l.Hostname, string(l.User.Username))
+func (l Linux) Delete(cfg api.Config, command string, hostname string, user *user.User) {
+	err := keyring.Delete(hostname, string(user.Username))
 	if err == nil {
-		msg := fmt.Sprintf("- the credential object '%s' has been removed", l.Hostname)
-		helpers.Logging(l.Config, msg, "INFO")
+		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
+		helpers.Logging(cfg, msg, "INFO")
 
-		if l.Command == "delete" {
-			msg := fmt.Sprintf("The credential object '%s' has been removed", l.Hostname)
+		if command == "delete" {
+			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
 	} else {
-		helpers.Logging(l.Config, fmt.Sprintf("- %s", err), "ERROR")
+		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
-		if l.Command == "delete" {
+		if command == "delete" {
 			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 		}
 	}
 }
 
-func (l Linux) Get() {
-	if l.Config.Logging.Enabled == true {
-		msg := fmt.Sprintf("- terraform server: %s", l.Hostname)
-		helpers.Logging(l.Config, msg, "INFO")
-		msg = fmt.Sprintf("- user requesting access: %s", string(l.User.Username))
-		helpers.Logging(l.Config, msg, "INFO")
+func (l Linux) Get(cfg api.Config, hostname string, user *user.User) {
+	if cfg.Logging.Enabled == true {
+		msg := fmt.Sprintf("- terraform server: %s", hostname)
+		helpers.Logging(cfg, msg, "INFO")
+		msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
+		helpers.Logging(cfg, msg, "INFO")
 	}
 
-	secret, err := keyring.Get(l.Hostname, string(l.User.Username))
+	secret, err := keyring.Get(hostname, string(user.Username))
 	if err != nil {
-		if l.Config.Logging.Enabled == true {
-			helpers.Logging(l.Config, fmt.Sprintf("- %s", err), "ERROR")
+		if cfg.Logging.Enabled == true {
+			helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 		}
 		fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	} else {
@@ -101,9 +95,9 @@ func (l Linux) Get() {
 		responseA, _ := json.Marshal(response)
 		fmt.Println(string(responseA))
 
-		if l.Config.Logging.Enabled == true {
-			msg := fmt.Sprintf("- token was retrieved for: %s", l.Hostname)
-			helpers.Logging(l.Config, msg, "INFO")
+		if cfg.Logging.Enabled == true {
+			msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
+			helpers.Logging(cfg, msg, "INFO")
 		}
 	}
 }
