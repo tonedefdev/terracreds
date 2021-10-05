@@ -16,6 +16,7 @@ import (
 
 type Mac struct{}
 
+// Create stores or updates a Terraform API token in MacOS Keyring
 func (m Mac) Create(cfg api.Config, hostname string, token interface{}, user *user.User) {
 	var method string
 	_, err := keyring.Get(hostname, string(user.Username))
@@ -52,6 +53,7 @@ func (m Mac) Create(cfg api.Config, hostname string, token interface{}, user *us
 	}
 }
 
+// Delete removes or forgets a Terraform API token in MacOS Keyring
 func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.User) {
 	err := keyring.Delete(hostname, string(user.Username))
 	if err == nil {
@@ -71,6 +73,7 @@ func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.
 	}
 }
 
+// Get retrives a Terraform API token in MacOS Keyring
 func (m Mac) Get(cfg api.Config, hostname string, user *user.User) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)

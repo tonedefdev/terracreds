@@ -87,9 +87,7 @@ func main() {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
 					} else if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--hostname") {
 						msg := fmt.Sprintf("A hostname was not expected here: %s", os.Args[2])
-						if cfg.Logging.Enabled == true {
-							helpers.Logging(cfg, msg, "WARNING")
-						}
+						helpers.Logging(cfg, msg, "WARNING")
 						fmt.Fprintf(color.Output, "%s: %s Did you mean `terracreds delete --hostname/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
 					} else {
 						user, err := user.Current()

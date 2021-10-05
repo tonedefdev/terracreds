@@ -16,6 +16,7 @@ import (
 
 type Linux struct{}
 
+// Create stores or updates a Terraform API token in Gnome Keyring
 func (l Linux) Create(cfg api.Config, hostname string, token interface{}, user *user.User) {
 	var method string
 	_, err := keyring.Get(hostname, string(user.Username))
@@ -52,6 +53,7 @@ func (l Linux) Create(cfg api.Config, hostname string, token interface{}, user *
 	}
 }
 
+// Delete removes or forgets a Terraform API token in Gnome Keyring
 func (l Linux) Delete(cfg api.Config, command string, hostname string, user *user.User) {
 	err := keyring.Delete(hostname, string(user.Username))
 	if err == nil {
@@ -71,6 +73,7 @@ func (l Linux) Delete(cfg api.Config, command string, hostname string, user *use
 	}
 }
 
+// Get retrieves a Terraform API token in Gnome Keyring
 func (l Linux) Get(cfg api.Config, hostname string, user *user.User) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)

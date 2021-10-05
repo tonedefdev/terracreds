@@ -96,28 +96,28 @@ func TestGenerateTerracreds(t *testing.T) {
 
 func TestTerracreds(t *testing.T) {
 	var cfg api.Config
-	var c *cli.Context
 	const hostname = "terracreds.test.io"
 	const apiToken = "9ZWRa0Ge0iQCtA.atlasv1.HpZAd8426rHFskeEFo3AzimnkfR1ldYy69zz0op0NJZ79et8nrgjw3lQfi0FyJ1o8iw"
+	const command = "delete"
 
 	user, err := user.Current()
 	helpers.CheckError(err)
 
 	if runtime.GOOS == "windows" {
-		terracreds.Create(platform.Windows{}, cfg, c.String("hostname"), apiToken, user)
+		terracreds.Create(platform.Windows{}, cfg, hostname, apiToken, user)
 		terracreds.Get(platform.Windows{}, cfg, hostname, user)
-		terracreds.Delete(platform.Windows{}, cfg, os.Args[1], c.String("hostname"), user)
+		terracreds.Delete(platform.Windows{}, cfg, command, hostname, user)
 	}
 
 	if runtime.GOOS == "dawrin" {
-		terracreds.Create(platform.Mac{}, cfg, c.String("hostname"), apiToken, user)
+		terracreds.Create(platform.Mac{}, cfg, hostname, apiToken, user)
 		terracreds.Get(platform.Mac{}, cfg, hostname, user)
-		terracreds.Delete(platform.Mac{}, cfg, os.Args[1], c.String("hostname"), user)
+		terracreds.Delete(platform.Mac{}, cfg, command, hostname, user)
 	}
 
 	if runtime.GOOS == "linux" {
-		terracreds.Create(platform.Linux{}, cfg, c.String("hostname"), apiToken, user)
+		terracreds.Create(platform.Linux{}, cfg, hostname, apiToken, user)
 		terracreds.Get(platform.Linux{}, cfg, hostname, user)
-		terracreds.Delete(platform.Linux{}, cfg, os.Args[1], c.String("hostname"), user)
+		terracreds.Delete(platform.Linux{}, cfg, command, hostname, user)
 	}
 }

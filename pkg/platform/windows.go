@@ -16,7 +16,7 @@ import (
 
 type Windows struct{}
 
-// Create stores or updates a credential in the Windows Credential Manager
+// Create stores or updates a Terafform API token in Windows Credential Manager
 func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User) {
 	var method string
 	_, err := wincred.GetGenericCredential(hostname)
@@ -79,7 +79,7 @@ func (w Windows) Delete(cfg api.Config, command string, hostname string, user *u
 	}
 }
 
-// Get retrieves a Terraform API token stored in Windows Credential Manager
+// Get retrieves a Terraform API token in Windows Credential Manager
 func (w Windows) Get(cfg api.Config, hostname string, user *user.User) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
