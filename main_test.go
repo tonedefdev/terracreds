@@ -12,7 +12,6 @@ import (
 
 	api "github.com/tonedefdev/terracreds/api"
 	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
-	platform "github.com/tonedefdev/terracreds/pkg/platform"
 )
 
 func TestWriteToFile(t *testing.T) {
@@ -96,6 +95,8 @@ func TestGenerateTerracreds(t *testing.T) {
 
 func TestTerracreds(t *testing.T) {
 	var cfg api.Config
+	provider := returnProvider(runtime.GOOS)
+
 	const hostname = "terracreds.test.io"
 	const apiToken = "9ZWRa0Ge0iQCtA.atlasv1.HpZAd8426rHFskeEFo3AzimnkfR1ldYy69zz0op0NJZ79et8nrgjw3lQfi0FyJ1o8iw"
 	const command = "delete"
@@ -103,21 +104,7 @@ func TestTerracreds(t *testing.T) {
 	user, err := user.Current()
 	helpers.CheckError(err)
 
-	if runtime.GOOS == "windows" {
-		terracreds.Create(platform.Windows{}, cfg, hostname, apiToken, user)
-		terracreds.Get(platform.Windows{}, cfg, hostname, user)
-		terracreds.Delete(platform.Windows{}, cfg, command, hostname, user)
-	}
-
-	if runtime.GOOS == "dawrin" {
-		terracreds.Create(platform.Mac{}, cfg, hostname, apiToken, user)
-		terracreds.Get(platform.Mac{}, cfg, hostname, user)
-		terracreds.Delete(platform.Mac{}, cfg, command, hostname, user)
-	}
-
-	if runtime.GOOS == "linux" {
-		terracreds.Create(platform.Linux{}, cfg, hostname, apiToken, user)
-		terracreds.Get(platform.Linux{}, cfg, hostname, user)
-		terracreds.Delete(platform.Linux{}, cfg, command, hostname, user)
-	}
+	Terracreds.Create(provider, cfg, hostname, apiToken, user)
+	Terracreds.Get(provider, cfg, hostname, user)
+	Terracreds.Delete(provider, cfg, command, hostname, user)
 }

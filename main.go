@@ -15,17 +15,41 @@ import (
 	platform "github.com/tonedefdev/terracreds/pkg/platform"
 )
 
-// terracreds interface implements these methods
-type terracreds interface {
+// Terracreds interface implements these methods for a credential's lifecycle
+type Terracreds interface {
+	// Create or store an API token in a vault
 	Create(cfg api.Config, hostname string, token interface{}, user *user.User)
+	// Delete or forget an API token in a vault
 	Delete(cfg api.Config, command string, hostname string, user *user.User)
+	// Get or retrieve an API token in a vault
 	Get(cfg api.Config, hostname string, user *user.User)
 }
+
+func returnProvider(os string) Terracreds {
+	switch os {
+	case "darwin":
+		return platform.Mac{}
+	case "linux":
+		return platform.Linux{}
+	case "windows":
+		return platform.Windows{}
+	default:
+		return nil
+	}
+}
+
+var Provider Terracreds
 
 func main() {
 	var cfg api.Config
 	version := "1.1.2"
 	helpers.LoadConfig(&cfg)
+
+	provider := returnProvider(runtime.GOOS)
+	if provider == nil {
+		fmt.Fprintf(color.Output, "%s: Terracreds cannot run on this platform: '%s'\n", color.RedString("ERROR"), runtime.GOOS)
+	}
+
 	app := &cli.App{
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
@@ -55,18 +79,7 @@ func main() {
 					} else {
 						user, err := user.Current()
 						helpers.CheckError(err)
-
-						if runtime.GOOS == "windows" {
-							terracreds.Create(platform.Windows{}, cfg, c.String("hostname"), c.String("apiToken"), user)
-						}
-
-						if runtime.GOOS == "dawrin" {
-							terracreds.Create(platform.Mac{}, cfg, c.String("hostname"), c.String("apiToken"), user)
-						}
-
-						if runtime.GOOS == "linux" {
-							terracreds.Create(platform.Linux{}, cfg, c.String("hostname"), c.String("apiToken"), user)
-						}
+						Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user)
 					}
 					return nil
 				},
@@ -92,18 +105,7 @@ func main() {
 					} else {
 						user, err := user.Current()
 						helpers.CheckError(err)
-
-						if runtime.GOOS == "windows" {
-							terracreds.Delete(platform.Windows{}, cfg, os.Args[1], c.String("hostname"), user)
-						}
-
-						if runtime.GOOS == "dawrin" {
-							terracreds.Delete(platform.Mac{}, cfg, os.Args[1], c.String("hostname"), user)
-						}
-
-						if runtime.GOOS == "linux" {
-							terracreds.Delete(platform.Linux{}, cfg, os.Args[1], c.String("hostname"), user)
-						}
+						Terracreds.Delete(provider, cfg, os.Args[1], c.String("hostname"), user)
 					}
 					return nil
 				},
@@ -117,18 +119,7 @@ func main() {
 					} else {
 						user, err := user.Current()
 						helpers.CheckError(err)
-
-						if runtime.GOOS == "windows" {
-							terracreds.Delete(platform.Windows{}, cfg, os.Args[1], os.Args[2], user)
-						}
-
-						if runtime.GOOS == "dawrin" {
-							terracreds.Delete(platform.Mac{}, cfg, os.Args[1], os.Args[2], user)
-						}
-
-						if runtime.GOOS == "linux" {
-							terracreds.Delete(platform.Linux{}, cfg, os.Args[1], os.Args[2], user)
-						}
+						Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user)
 					}
 					return nil
 				},
@@ -155,18 +146,7 @@ func main() {
 					if len(os.Args) > 2 {
 						user, err := user.Current()
 						helpers.CheckError(err)
-
-						if runtime.GOOS == "windows" {
-							terracreds.Get(platform.Windows{}, cfg, os.Args[2], user)
-						}
-
-						if runtime.GOOS == "dawrin" {
-							terracreds.Get(platform.Mac{}, cfg, os.Args[2], user)
-						}
-
-						if runtime.GOOS == "linux" {
-							terracreds.Get(platform.Linux{}, cfg, os.Args[2], user)
-						}
+						Terracreds.Get(provider, cfg, os.Args[2], user)
 					} else {
 						msg := "- hostname was expected after the 'get' command but no argument was provided"
 						helpers.Logging(cfg, msg, "ERROR")
@@ -184,18 +164,7 @@ func main() {
 					} else {
 						user, err := user.Current()
 						helpers.CheckError(err)
-
-						if runtime.GOOS == "windows" {
-							terracreds.Create(platform.Windows{}, cfg, os.Args[2], nil, user)
-						}
-
-						if runtime.GOOS == "dawrin" {
-							terracreds.Create(platform.Mac{}, cfg, os.Args[2], nil, user)
-						}
-
-						if runtime.GOOS == "linux" {
-							terracreds.Create(platform.Linux{}, cfg, os.Args[2], nil, user)
-						}
+						Terracreds.Create(provider, cfg, os.Args[2], nil, user)
 					}
 					return nil
 				},
