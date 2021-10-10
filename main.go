@@ -25,6 +25,7 @@ type Terracreds interface {
 	Get(cfg api.Config, hostname string, user *user.User)
 }
 
+// returnProvider returns the correct struct for the specific operating system
 func returnProvider(os string) Terracreds {
 	switch os {
 	case "darwin":
@@ -37,8 +38,6 @@ func returnProvider(os string) Terracreds {
 		return nil
 	}
 }
-
-var Provider Terracreds
 
 func main() {
 	var cfg api.Config
