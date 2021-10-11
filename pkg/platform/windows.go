@@ -10,8 +10,9 @@ import (
 	"github.com/danieljoos/wincred"
 	"github.com/fatih/color"
 
-	api "github.com/tonedefdev/terracreds/api"
-	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
+	"github.com/tonedefdev/terracreds/api"
+	"github.com/tonedefdev/terracreds/pkg/helpers"
+	"github.com/tonedefdev/terracreds/pkg/vault"
 )
 
 type Windows struct{}
@@ -80,7 +81,7 @@ func (w Windows) Delete(cfg api.Config, command string, hostname string, user *u
 }
 
 // Get retrieves a Terraform API token in Windows Credential Manager
-func (w Windows) Get(cfg api.Config, hostname string, user *user.User) {
+func (w Windows) Get(cfg api.Config, hostname string, user *user.User) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")
@@ -88,22 +89,41 @@ func (w Windows) Get(cfg api.Config, hostname string, user *user.User) {
 		helpers.Logging(cfg, msg, "INFO")
 	}
 
+	if cfg.Azure.VaultUri != "" {
+		vault := vault.Azure{
+			UseMSI:   cfg.Azure.UseMSI,
+			VaultUri: cfg.Azure.VaultUri,
+		}
+
+		secretName := cfg.Azure.SecretName
+		token, err := vault.Get(secretName)
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		return token, err
+	}
+
 	cred, err := wincred.GetGenericCredential(hostname)
 	if err == nil && cred.UserName == user.Username {
 		response := &api.CredentialResponse{
 			Token: string(cred.CredentialBlob),
 		}
-		responseA, _ := json.Marshal(response)
-		fmt.Println(string(responseA))
+
+		token, err := json.Marshal(response)
 
 		if cfg.Logging.Enabled == true {
 			msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
 			helpers.Logging(cfg, msg, "INFO")
 		}
-	} else {
-		if cfg.Logging.Enabled == true {
-			helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
-		}
-		fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
+
+		return token, err
 	}
+
+	if cfg.Logging.Enabled == true {
+		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+	}
+
+	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
+	return nil, err
 }

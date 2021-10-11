@@ -22,7 +22,7 @@ type Terracreds interface {
 	// Delete or forget an API token in a vault
 	Delete(cfg api.Config, command string, hostname string, user *user.User)
 	// Get or retrieve an API token in a vault
-	Get(cfg api.Config, hostname string, user *user.User)
+	Get(cfg api.Config, hostname string, user *user.User) ([]byte, error)
 }
 
 // returnProvider returns the correct struct for the specific operating system
@@ -75,11 +75,12 @@ func main() {
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
-					} else {
-						user, err := user.Current()
-						helpers.CheckError(err)
-						Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user)
+						return nil
 					}
+
+					user, err := user.Current()
+					helpers.CheckError(err)
+					Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user)
 					return nil
 				},
 			},
@@ -97,15 +98,19 @@ func main() {
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
-					} else if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--hostname") {
-						msg := fmt.Sprintf("A hostname was not expected here: %s", os.Args[2])
+						return nil
+					}
+
+					if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--hostname") {
+						msg := fmt.Sprintf("A hostname was not expected here: '%s'", os.Args[2])
 						helpers.Logging(cfg, msg, "WARNING")
 						fmt.Fprintf(color.Output, "%s: %s Did you mean `terracreds delete --hostname/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
-					} else {
-						user, err := user.Current()
-						helpers.CheckError(err)
-						Terracreds.Delete(provider, cfg, os.Args[1], c.String("hostname"), user)
+						return nil
 					}
+
+					user, err := user.Current()
+					helpers.CheckError(err)
+					Terracreds.Delete(provider, cfg, os.Args[1], c.String("hostname"), user)
 					return nil
 				},
 			},
@@ -115,11 +120,12 @@ func main() {
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds forget -h' for help info\n", color.RedString("ERROR"))
-					} else {
-						user, err := user.Current()
-						helpers.CheckError(err)
-						Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user)
+						return nil
 					}
+
+					user, err := user.Current()
+					helpers.CheckError(err)
+					Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user)
 					return nil
 				},
 			},
@@ -145,12 +151,18 @@ func main() {
 					if len(os.Args) > 2 {
 						user, err := user.Current()
 						helpers.CheckError(err)
-						Terracreds.Get(provider, cfg, os.Args[2], user)
-					} else {
-						msg := "- hostname was expected after the 'get' command but no argument was provided"
-						helpers.Logging(cfg, msg, "ERROR")
-						fmt.Fprintf(color.Output, "%s: %s\n", color.RedString("ERROR"), msg)
+
+						token, err := Terracreds.Get(provider, cfg, os.Args[2], user)
+						if err != nil {
+							helpers.CheckError(err)
+						}
+						fmt.Println(string(token))
+						return nil
 					}
+
+					msg := "A hostname was expected after the 'get' command but no argument was provided"
+					helpers.Logging(cfg, msg, "ERROR")
+					fmt.Fprintf(color.Output, "%s: %s\n", color.RedString("ERROR"), msg)
 					return nil
 				},
 			},
@@ -160,11 +172,12 @@ func main() {
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
-					} else {
-						user, err := user.Current()
-						helpers.CheckError(err)
-						Terracreds.Create(provider, cfg, os.Args[2], nil, user)
+						return nil
 					}
+
+					user, err := user.Current()
+					helpers.CheckError(err)
+					Terracreds.Create(provider, cfg, os.Args[2], nil, user)
 					return nil
 				},
 			},

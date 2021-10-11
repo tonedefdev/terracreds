@@ -1,0 +1,7 @@
+logging:
+  enabled: true
+  path: C:/temp/
+azure:
+  secretName: test
+  useMSI: true
+  vaultUri: https://test.vault.net

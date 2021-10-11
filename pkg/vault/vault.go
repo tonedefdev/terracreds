@@ -1,7 +1,7 @@
 package vault
 
-type Vault interface {
+type TerraVault interface {
 	Create()
 	Delete()
-	Get()
+	Get(secretName string) ([]byte, error)
 }

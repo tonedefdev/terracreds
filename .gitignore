@@ -13,3 +13,8 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+terraform/.terraform/*
+terraform/.terraform.tfstate.lock.info
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup

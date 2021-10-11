@@ -10,8 +10,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/zalando/go-keyring"
 
-	api "github.com/tonedefdev/terracreds/api"
-	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
+	"github.com/tonedefdev/terracreds/api"
+	"github.com/tonedefdev/terracreds/pkg/helpers"
 )
 
 type Mac struct{}
@@ -74,7 +74,7 @@ func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.
 }
 
 // Get retrives a Terraform API token in MacOS Keyring
-func (m Mac) Get(cfg api.Config, hostname string, user *user.User) {
+func (m Mac) Get(cfg api.Config, hostname string, user *user.User) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")
@@ -83,21 +83,23 @@ func (m Mac) Get(cfg api.Config, hostname string, user *user.User) {
 	}
 
 	secret, err := keyring.Get(hostname, string(user.Username))
-	if err != nil {
-		if cfg.Logging.Enabled == true {
-			helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
-		}
-		fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
-	} else {
+	if err == nil {
 		response := &api.CredentialResponse{
 			Token: secret,
 		}
-		responseA, _ := json.Marshal(response)
-		fmt.Println(string(responseA))
+		token, err := json.Marshal(response)
 
-		if cfg.Logging.Enabled == true {
+		if cfg.Logging.Enabled == true && err == nil {
 			msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
 			helpers.Logging(cfg, msg, "INFO")
 		}
+
+		return token, err
 	}
+
+	if cfg.Logging.Enabled == true {
+		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+	}
+	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
+	return nil, err
 }
