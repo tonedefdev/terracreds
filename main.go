@@ -10,19 +10,20 @@ import (
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 
-	api "github.com/tonedefdev/terracreds/api"
-	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
-	platform "github.com/tonedefdev/terracreds/pkg/platform"
+	"github.com/tonedefdev/terracreds/api"
+	"github.com/tonedefdev/terracreds/pkg/helpers"
+	"github.com/tonedefdev/terracreds/pkg/platform"
+	"github.com/tonedefdev/terracreds/pkg/vault"
 )
 
 // Terracreds interface implements these methods for a credential's lifecycle
 type Terracreds interface {
 	// Create or store an API token in a vault
-	Create(cfg api.Config, hostname string, token interface{}, user *user.User)
+	Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error
 	// Delete or forget an API token in a vault
-	Delete(cfg api.Config, command string, hostname string, user *user.User)
+	Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault)
 	// Get or retrieve an API token in a vault
-	Get(cfg api.Config, hostname string, user *user.User) ([]byte, error)
+	Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error)
 }
 
 // returnProvider returns the correct struct for the specific operating system
@@ -39,6 +40,23 @@ func returnProvider(os string) Terracreds {
 	}
 }
 
+func returnVaultProvider(cfg *api.Config) vault.TerraVault {
+	if cfg.Azure.VaultUri != "" {
+		vault := vault.AzureKeyVault{
+			SecretName: cfg.Azure.SecretName,
+			UseMSI:     cfg.Azure.UseMSI,
+			VaultUri:   cfg.Azure.VaultUri,
+		}
+
+		if cfg.Azure.SecretName != "" {
+			vault.SecretName = cfg.Azure.SecretName
+		}
+
+		return vault
+	}
+	return nil
+}
+
 func main() {
 	var cfg api.Config
 	version := "1.1.2"
@@ -48,6 +66,8 @@ func main() {
 	if provider == nil {
 		fmt.Fprintf(color.Output, "%s: Terracreds cannot run on this platform: '%s'\n", color.RedString("ERROR"), runtime.GOOS)
 	}
+
+	vaultProvider := returnVaultProvider(&cfg)
 
 	app := &cli.App{
 		Name:      "terracreds",
@@ -80,7 +100,7 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user)
+					Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user, vaultProvider)
 					return nil
 				},
 			},
@@ -110,7 +130,7 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Delete(provider, cfg, os.Args[1], c.String("hostname"), user)
+					Terracreds.Delete(provider, cfg, os.Args[1], c.String("hostname"), user, vaultProvider)
 					return nil
 				},
 			},
@@ -125,7 +145,7 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user)
+					Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user, vaultProvider)
 					return nil
 				},
 			},
@@ -152,7 +172,7 @@ func main() {
 						user, err := user.Current()
 						helpers.CheckError(err)
 
-						token, err := Terracreds.Get(provider, cfg, os.Args[2], user)
+						token, err := Terracreds.Get(provider, cfg, os.Args[2], user, vaultProvider)
 						if err != nil {
 							helpers.CheckError(err)
 						}
@@ -177,7 +197,7 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Create(provider, cfg, os.Args[2], nil, user)
+					Terracreds.Create(provider, cfg, os.Args[2], nil, user, vaultProvider)
 					return nil
 				},
 			},

@@ -17,49 +17,69 @@ import (
 
 type Windows struct{}
 
-// Create stores or updates a Terafform API token in Windows Credential Manager
-func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User) {
+// Create stores or updates a Terafform API token in Windows Credential Manager or a specified Cloud Vault
+func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
 	var method string
+
+	if vault != nil {
+		method = "Updated"
+		_, err := vault.Get()
+		if err != nil {
+			method = "Created"
+		}
+
+		secretValue := fmt.Sprintf("%v", token)
+		err = vault.Create(secretValue)
+		if err != nil {
+			helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+			return err
+		}
+
+		fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
+		return err
+	}
+
+	method = "Updated"
 	_, err := wincred.GetGenericCredential(hostname)
 	if err != nil {
 		method = "Created"
-	} else {
-		method = "Updated"
 	}
 
 	cred := wincred.NewGenericCredential(hostname)
 	if token == nil {
 		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
-		if err != nil {
-			fmt.Print(err.Error())
-		}
 		cred.CredentialBlob = []byte(api.CredentialResponse{}.Token)
-	} else {
-		str := fmt.Sprintf("%v", token)
-		cred.CredentialBlob = []byte(str)
+		return err
 	}
 
+	str := fmt.Sprintf("%v", token)
+	cred.CredentialBlob = []byte(str)
 	cred.UserName = string(user.Username)
 	err = cred.Write()
 
-	if err == nil {
-		msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
-		helpers.Logging(cfg, msg, "SUCCESS")
-
-		if token != nil {
-			fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
-		}
-	} else {
-		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
-
-		if token != nil {
-			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
-		}
+	if err != nil && token != nil {
+		fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
+		return err
 	}
+
+	if err != nil {
+		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+		return err
+	}
+
+	msg := fmt.Sprintf("- %s the credential object %s", strings.ToLower(method), hostname)
+	helpers.Logging(cfg, msg, "SUCCESS")
+
+	if token != nil {
+		fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
+		return err
+	}
+
+	return err
 }
 
 // Delete removes or forgets a Terraform API token from the Windows Credential Manager
-func (w Windows) Delete(cfg api.Config, command string, hostname string, user *user.User) {
+func (w Windows) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) {
 	cred, err := wincred.GetGenericCredential(hostname)
 	if err == nil && cred.UserName == user.Username {
 		cred.Delete()
@@ -81,7 +101,7 @@ func (w Windows) Delete(cfg api.Config, command string, hostname string, user *u
 }
 
 // Get retrieves a Terraform API token in Windows Credential Manager
-func (w Windows) Get(cfg api.Config, hostname string, user *user.User) ([]byte, error) {
+func (w Windows) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")
@@ -89,14 +109,8 @@ func (w Windows) Get(cfg api.Config, hostname string, user *user.User) ([]byte, 
 		helpers.Logging(cfg, msg, "INFO")
 	}
 
-	if cfg.Azure.VaultUri != "" {
-		vault := vault.Azure{
-			UseMSI:   cfg.Azure.UseMSI,
-			VaultUri: cfg.Azure.VaultUri,
-		}
-
-		secretName := cfg.Azure.SecretName
-		token, err := vault.Get(secretName)
+	if vault != nil {
+		token, err := vault.Get()
 		if err != nil {
 			helpers.CheckError(err)
 		}

@@ -50,7 +50,7 @@ resource "azurerm_windows_virtual_machine" "vm" {
   resource_group_name = azurerm_resource_group.rg.name
   size                = var.vm_size
   admin_username      = "terraadmin"
-  admin_password      = "TerracredsR0cks!"
+  admin_password      = "TerracredsR0cks!" // Yes, I know this is bad form, but it's only a test machine :P
   network_interface_ids = [
     azurerm_network_interface.nic[count.index].id,
   ]
@@ -91,6 +91,8 @@ resource "azurerm_key_vault" "keyvault" {
     secret_permissions = [
       "Get",
       "List",
+      "Set",
+      "Delete"
     ]
   }
 }
