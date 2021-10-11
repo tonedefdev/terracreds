@@ -20,9 +20,9 @@ type Linux struct{}
 // Create stores or updates a Terraform API token in Gnome Keyring
 func (l Linux) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
 	var method string
+	method = "Updated"
 
 	if vault != nil {
-		method = "Updated"
 		_, err := vault.Get()
 		if err != nil {
 			method = "Created"
@@ -39,7 +39,6 @@ func (l Linux) Create(cfg api.Config, hostname string, token interface{}, user *
 		return err
 	}
 
-	method = "Updated"
 	_, err := keyring.Get(hostname, string(user.Username))
 	if err != nil {
 		method = "Created"

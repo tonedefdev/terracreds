@@ -20,9 +20,9 @@ type Windows struct{}
 // Create stores or updates a Terafform API token in Windows Credential Manager or a specified Cloud Vault
 func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
 	var method string
+	method = "Updated"
 
 	if vault != nil {
-		method = "Updated"
 		_, err := vault.Get()
 		if err != nil {
 			method = "Created"
@@ -39,7 +39,6 @@ func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user
 		return err
 	}
 
-	method = "Updated"
 	_, err := wincred.GetGenericCredential(hostname)
 	if err != nil {
 		method = "Created"
