@@ -8,6 +8,8 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0
+	github.com/aws/aws-sdk-go v1.41.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.7.0 // indirect
 	github.com/danieljoos/wincred v1.1.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.9.0

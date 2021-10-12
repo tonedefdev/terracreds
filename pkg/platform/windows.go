@@ -18,7 +18,7 @@ import (
 type Windows struct{}
 
 // Create stores or updates a Terafform API token in Windows Credential Manager or a specified Cloud Vault
-func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
+func (w *Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
 
@@ -78,7 +78,7 @@ func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user
 }
 
 // Delete removes or forgets a Terraform API token from the Windows Credential Manager
-func (w Windows) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
+func (w *Windows) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
 	if vault != nil {
 		err := vault.Delete()
 
@@ -116,7 +116,7 @@ func (w Windows) Delete(cfg api.Config, command string, hostname string, user *u
 }
 
 // Get retrieves a Terraform API token in Windows Credential Manager
-func (w Windows) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
+func (w *Windows) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")

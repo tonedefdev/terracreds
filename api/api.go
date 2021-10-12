@@ -1,15 +1,32 @@
 package api
 
+// Azure is the configuration structure for the Azure vault provider
 type Azure struct {
+	// SecretName (Optional) is the name of the secret stored in Azure Key Vault
+	// if omitted Terracreds will use the hostname value instead
 	SecretName string `yaml:"secretName,omitempty"`
-	UseMSI     bool   `yaml:"useMSI,omitempty"`
-	VaultUri   string `yaml:"vaultUri,omitempty"`
+	// UseMSI (Required) is a flag to indicate if the Managed Identity of the Azure VM should be used for authentication
+	UseMSI bool `yaml:"useMSI,omitempty"`
+	// VaultUri (Required) is the FQDNS of the Azure Key Vault resource
+	VaultUri string `yaml:"vaultUri,omitempty"`
+}
+
+// Aws is the configuration structure for the AWS vault provider
+type Aws struct {
+	// Description (Optional) is a description to provide to the secret
+	Description string `yaml:"description,omitempty"`
+	// Region (Required) is the region where AWS
+	Region string `yaml:"region,omitempty"`
+	// SecretName (Optional) is the friendly name of the secret stored in AWS Secrets Manager
+	// if omitted Terracreds will use the hostname value instead
+	SecretName string `yaml:"secretName,omitempty"`
 }
 
 // Config struct for terracreds custom configuration
 type Config struct {
 	Logging Logging `yaml:"logging"`
 	Azure   Azure   `yaml:"azure,omitempty"`
+	Aws     Aws     `yaml:"aws,omitempty"`
 }
 
 // Logging struct defines the parameters for logging

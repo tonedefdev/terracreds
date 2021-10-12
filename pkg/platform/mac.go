@@ -18,7 +18,7 @@ import (
 type Mac struct{}
 
 // Create stores or updates a Terraform API token in MacOS Keyring
-func (m Mac) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
+func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
 
@@ -61,7 +61,7 @@ func (m Mac) Create(cfg api.Config, hostname string, token interface{}, user *us
 }
 
 // Delete removes or forgets a Terraform API token in MacOS Keyring
-func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
+func (m *Mac) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
 	err := keyring.Delete(hostname, string(user.Username))
 	if err == nil {
 		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
@@ -82,7 +82,7 @@ func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.
 }
 
 // Get retrives a Terraform API token in MacOS Keyring
-func (m Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
+func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")

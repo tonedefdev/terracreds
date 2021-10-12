@@ -22,6 +22,12 @@ variable test_az {
   description = "A flag to enable testing of Azure resources"
 }
 
+variable test_aws {
+  type        = bool
+  default     = false
+  description = "A flag to enable testing of AWS resources"
+}
+
 variable vm_name {
   type        = string
   default     = "terracreds-vm"

@@ -30,11 +30,11 @@ type Terracreds interface {
 func returnProvider(os string) Terracreds {
 	switch os {
 	case "darwin":
-		return platform.Mac{}
+		return &platform.Mac{}
 	case "linux":
-		return platform.Linux{}
+		return &platform.Linux{}
 	case "windows":
-		return platform.Windows{}
+		return &platform.Windows{}
 	default:
 		return nil
 	}
@@ -42,34 +42,53 @@ func returnProvider(os string) Terracreds {
 
 // returnsVaultProvider handles returning the correct vault provider based on the
 // api.Config struct
-func returnVaultProvider(cfg *api.Config) vault.TerraVault {
+func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
 	if cfg.Azure.VaultUri != "" {
-		vault := vault.AzureKeyVault{
-			SecretName: cfg.Azure.SecretName,
+		vault := &vault.AzureKeyVault{
+			SecretName: hostname,
 			UseMSI:     cfg.Azure.UseMSI,
 			VaultUri:   cfg.Azure.VaultUri,
 		}
 
+		// Fallback to the cfg's secret name if it isn't an empty string
 		if cfg.Azure.SecretName != "" {
 			vault.SecretName = cfg.Azure.SecretName
 		}
 
 		return vault
 	}
+
+	if cfg.Aws.Region != "" {
+		vault := &vault.AwsSecretsManager{
+			Description: cfg.Aws.Description,
+			Region:      cfg.Aws.Region,
+			SecretName:  hostname,
+		}
+
+		// Fallback to the cfg's secret name if it isn't an empty string
+		if cfg.Aws.SecretName != "" {
+			vault.SecretName = cfg.Aws.SecretName
+		}
+
+		return vault
+	}
+
 	return nil
 }
 
 func main() {
 	var cfg api.Config
 	version := "1.1.2"
-	helpers.LoadConfig(&cfg)
+
+	err := helpers.LoadConfig(&cfg)
+	if err != nil {
+		helpers.CheckError(err)
+	}
 
 	provider := returnProvider(runtime.GOOS)
 	if provider == nil {
 		fmt.Fprintf(color.Output, "%s: Terracreds cannot run on this platform: '%s'\n", color.RedString("ERROR"), runtime.GOOS)
 	}
-
-	vaultProvider := returnVaultProvider(&cfg)
 
 	app := &cli.App{
 		Name:      "terracreds",
@@ -99,6 +118,8 @@ func main() {
 						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
 						return nil
 					}
+
+					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
 
 					user, err := user.Current()
 					helpers.CheckError(err)
@@ -130,6 +151,8 @@ func main() {
 						return nil
 					}
 
+					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+
 					user, err := user.Current()
 					helpers.CheckError(err)
 					err = Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user, vaultProvider)
@@ -148,6 +171,8 @@ func main() {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds forget -h' for help info\n", color.RedString("ERROR"))
 						return nil
 					}
+
+					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
 
 					user, err := user.Current()
 					helpers.CheckError(err)
@@ -182,6 +207,8 @@ func main() {
 						user, err := user.Current()
 						helpers.CheckError(err)
 
+						vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+
 						token, err := Terracreds.Get(provider, cfg, os.Args[2], user, vaultProvider)
 						if err != nil {
 							helpers.CheckError(err)
@@ -205,6 +232,8 @@ func main() {
 						return nil
 					}
 
+					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+
 					user, err := user.Current()
 					helpers.CheckError(err)
 					Terracreds.Create(provider, cfg, os.Args[2], nil, user, vaultProvider)
@@ -214,6 +243,6 @@ func main() {
 		},
 	}
 
-	err := app.Run(os.Args)
+	err = app.Run(os.Args)
 	helpers.CheckError(err)
 }

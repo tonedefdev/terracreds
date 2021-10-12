@@ -96,12 +96,12 @@ func TestGenerateTerracreds(t *testing.T) {
 
 func TestTerracreds(t *testing.T) {
 	var cfg api.Config
-	provider := returnProvider(runtime.GOOS)
-	vaultProvider := returnVaultProvider(&cfg)
-
 	const hostname = "terracreds.test.io"
 	const apiToken = "9ZWRa0Ge0iQCtA.atlasv1.HpZAd8426rHFskeEFo3AzimnkfR1ldYy69zz0op0NJZ79et8nrgjw3lQfi0FyJ1o8iw"
 	const command = "delete"
+
+	provider := returnProvider(runtime.GOOS)
+	vaultProvider := returnVaultProvider(&cfg, hostname)
 
 	user, err := user.Current()
 	helpers.CheckError(err)

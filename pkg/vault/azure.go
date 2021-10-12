@@ -11,9 +11,9 @@ import (
 )
 
 type AzureKeyVault struct {
-	SecretName string `json:"secretName,omitempty"`
-	UseMSI     bool   `json:"useMSI,omitempty"`
-	VaultUri   string `json:"vaultUri,omitempty"`
+	SecretName string
+	UseMSI     bool
+	VaultUri   string
 }
 
 // getVaultClientMSI returns a keyvault.BaseClient with an MSI authorizer for an Azure Key Vault resource
@@ -39,7 +39,7 @@ func formatSecretName(secretName string) string {
 }
 
 // Create stores a secret in an Azure Key Vault
-func (akv AzureKeyVault) Create(secretValue string) error {
+func (akv *AzureKeyVault) Create(secretValue string) error {
 	ctx := context.Background()
 	client := getVaultClientMSI()
 
@@ -54,7 +54,7 @@ func (akv AzureKeyVault) Create(secretValue string) error {
 }
 
 // Delete removes a secret stored in an Azure Key Vault
-func (akv AzureKeyVault) Delete() error {
+func (akv *AzureKeyVault) Delete() error {
 	ctx := context.Background()
 	client := getVaultClientMSI()
 
@@ -64,7 +64,7 @@ func (akv AzureKeyVault) Delete() error {
 }
 
 // Get retrieves a secrete stored in an Azure Key Vault
-func (akv AzureKeyVault) Get() ([]byte, error) {
+func (akv *AzureKeyVault) Get() ([]byte, error) {
 	ctx := context.Background()
 	client := getVaultClientMSI()
 
