@@ -78,7 +78,20 @@ func (w Windows) Create(cfg api.Config, hostname string, token interface{}, user
 }
 
 // Delete removes or forgets a Terraform API token from the Windows Credential Manager
-func (w Windows) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) {
+func (w Windows) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
+	if vault != nil {
+		err := vault.Delete()
+
+		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
+		helpers.Logging(cfg, msg, "INFO")
+
+		if command == "delete" {
+			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
+			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
+		}
+		return err
+	}
+
 	cred, err := wincred.GetGenericCredential(hostname)
 	if err == nil && cred.UserName == user.Username {
 		cred.Delete()
@@ -90,13 +103,16 @@ func (w Windows) Delete(cfg api.Config, command string, hostname string, user *u
 			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
-	} else {
-		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 
-		if command == "delete" {
-			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
-		}
+		return err
 	}
+
+	helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+	if command == "delete" {
+		fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
+	}
+
+	return err
 }
 
 // Get retrieves a Terraform API token in Windows Credential Manager
@@ -114,6 +130,11 @@ func (w Windows) Get(cfg api.Config, hostname string, user *user.User, vault vau
 			helpers.CheckError(err)
 		}
 
+		response := &api.CredentialResponse{
+			Token: string(token),
+		}
+
+		token, err = json.Marshal(response)
 		return token, err
 	}
 

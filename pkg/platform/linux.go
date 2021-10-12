@@ -17,7 +17,7 @@ import (
 
 type Linux struct{}
 
-// Create stores or updates a Terraform API token in Gnome Keyring
+// Create stores or updates a Terraform API token in Gnome Keyring or an external vault provider
 func (l Linux) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
@@ -47,7 +47,7 @@ func (l Linux) Create(cfg api.Config, hostname string, token interface{}, user *
 	if token == nil {
 		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
 		if err != nil {
-			fmt.Print(err.Error())
+			helpers.CheckError(err)
 		}
 		err = keyring.Set(hostname, string(user.Username), api.CredentialResponse{}.Token)
 		return err
@@ -77,8 +77,21 @@ func (l Linux) Create(cfg api.Config, hostname string, token interface{}, user *
 	return err
 }
 
-// Delete removes or forgets a Terraform API token in Gnome Keyring
-func (l Linux) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) {
+// Delete removes or forgets a Terraform API token in Gnome Keyring or an external vault provider
+func (l Linux) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
+	if vault != nil {
+		err := vault.Delete()
+
+		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
+		helpers.Logging(cfg, msg, "INFO")
+
+		if command == "delete" {
+			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
+			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
+		}
+		return err
+	}
+
 	err := keyring.Delete(hostname, string(user.Username))
 	if err == nil {
 		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
@@ -88,16 +101,17 @@ func (l Linux) Delete(cfg api.Config, command string, hostname string, user *use
 			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
-	} else {
-		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
-
-		if command == "delete" {
-			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
-		}
+		return err
 	}
+
+	helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+	if command == "delete" {
+		fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
+	}
+	return err
 }
 
-// Get retrieves a Terraform API token in Gnome Keyring
+// Get retrieves a Terraform API token in Gnome Keyring or an external vault provider
 func (l Linux) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
@@ -112,6 +126,11 @@ func (l Linux) Get(cfg api.Config, hostname string, user *user.User, vault vault
 			helpers.CheckError(err)
 		}
 
+		response := &api.CredentialResponse{
+			Token: string(token),
+		}
+
+		token, err = json.Marshal(response)
 		return token, err
 	}
 

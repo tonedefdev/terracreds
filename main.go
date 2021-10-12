@@ -21,7 +21,7 @@ type Terracreds interface {
 	// Create or store an API token in a vault
 	Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error
 	// Delete or forget an API token in a vault
-	Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault)
+	Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error
 	// Get or retrieve an API token in a vault
 	Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error)
 }
@@ -40,6 +40,8 @@ func returnProvider(os string) Terracreds {
 	}
 }
 
+// returnsVaultProvider handles returning the correct vault provider based on the
+// api.Config struct
 func returnVaultProvider(cfg *api.Config) vault.TerraVault {
 	if cfg.Azure.VaultUri != "" {
 		vault := vault.AzureKeyVault{
@@ -130,7 +132,11 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Delete(provider, cfg, os.Args[1], c.String("hostname"), user, vaultProvider)
+					err = Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user, vaultProvider)
+					if err != nil {
+						helpers.CheckError(err)
+					}
+
 					return nil
 				},
 			},
@@ -145,7 +151,11 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user, vaultProvider)
+					err = Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user, vaultProvider)
+					if err != nil {
+						helpers.CheckError(err)
+					}
+
 					return nil
 				},
 			},

@@ -2,13 +2,11 @@ package vault
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/tonedefdev/terracreds/api"
 	"github.com/tonedefdev/terracreds/pkg/helpers"
 )
 
@@ -40,6 +38,7 @@ func formatSecretName(secretName string) string {
 	return hostname
 }
 
+// Create stores a secret in an Azure Key Vault
 func (akv AzureKeyVault) Create(secretValue string) error {
 	ctx := context.Background()
 	client := getVaultClientMSI()
@@ -54,19 +53,22 @@ func (akv AzureKeyVault) Create(secretValue string) error {
 	return err
 }
 
+// Delete removes a secret stored in an Azure Key Vault
+func (akv AzureKeyVault) Delete() error {
+	ctx := context.Background()
+	client := getVaultClientMSI()
+
+	secret := formatSecretName(akv.SecretName)
+	_, err := client.DeleteSecret(ctx, akv.VaultUri, secret)
+	return err
+}
+
+// Get retrieves a secrete stored in an Azure Key Vault
 func (akv AzureKeyVault) Get() ([]byte, error) {
 	ctx := context.Background()
 	client := getVaultClientMSI()
+
 	secret := formatSecretName(akv.SecretName)
-
 	get, err := client.GetSecret(ctx, akv.VaultUri, secret, "")
-	if err == nil {
-		response := &api.CredentialResponse{
-			Token: string(*get.Value),
-		}
-		token, err := json.Marshal(response)
-		return token, err
-	}
-
-	return nil, err
+	return []byte(*get.Value), err
 }

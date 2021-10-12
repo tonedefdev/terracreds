@@ -30,7 +30,7 @@ func (m Mac) Create(cfg api.Config, hostname string, token interface{}, user *us
 	if token == nil {
 		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
 		if err != nil {
-			fmt.Print(err.Error())
+			helpers.CheckError(err)
 		}
 		err = keyring.Set(hostname, string(user.Username), api.CredentialResponse{}.Token)
 		return err
@@ -61,7 +61,7 @@ func (m Mac) Create(cfg api.Config, hostname string, token interface{}, user *us
 }
 
 // Delete removes or forgets a Terraform API token in MacOS Keyring
-func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) {
+func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
 	err := keyring.Delete(hostname, string(user.Username))
 	if err == nil {
 		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
@@ -71,13 +71,14 @@ func (m Mac) Delete(cfg api.Config, command string, hostname string, user *user.
 			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
-	} else {
-		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
-
-		if command == "delete" {
-			fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
-		}
+		return err
 	}
+
+	helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+	if command == "delete" {
+		fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
+	}
+	return err
 }
 
 // Get retrives a Terraform API token in MacOS Keyring
