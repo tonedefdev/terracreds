@@ -123,7 +123,11 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user, vaultProvider)
+					err = Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user, vaultProvider)
+					if err != nil {
+						helpers.CheckError(err)
+					}
+
 					return nil
 				},
 			},
@@ -236,7 +240,11 @@ func main() {
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					Terracreds.Create(provider, cfg, os.Args[2], nil, user, vaultProvider)
+					err = Terracreds.Create(provider, cfg, os.Args[2], nil, user, vaultProvider)
+					if err != nil {
+						helpers.CheckError(err)
+					}
+
 					return nil
 				},
 			},

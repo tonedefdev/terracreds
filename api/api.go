@@ -5,8 +5,10 @@ type Azure struct {
 	// SecretName (Optional) is the name of the secret stored in Azure Key Vault
 	// if omitted Terracreds will use the hostname value instead
 	SecretName string `yaml:"secretName,omitempty"`
+
 	// UseMSI (Required) is a flag to indicate if the Managed Identity of the Azure VM should be used for authentication
 	UseMSI bool `yaml:"useMSI,omitempty"`
+
 	// VaultUri (Required) is the FQDNS of the Azure Key Vault resource
 	VaultUri string `yaml:"vaultUri,omitempty"`
 }
@@ -15,8 +17,10 @@ type Azure struct {
 type Aws struct {
 	// Description (Optional) is a description to provide to the secret
 	Description string `yaml:"description,omitempty"`
-	// Region (Required) is the region where AWS
+
+	// Region (Required) is the region where AWS Secrets Manager is hosted
 	Region string `yaml:"region,omitempty"`
+
 	// SecretName (Optional) is the friendly name of the secret stored in AWS Secrets Manager
 	// if omitted Terracreds will use the hostname value instead
 	SecretName string `yaml:"secretName,omitempty"`
