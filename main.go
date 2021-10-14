@@ -43,6 +43,21 @@ func returnProvider(os string) Terracreds {
 // returnsVaultProvider handles returning the correct vault provider based on the
 // api.Config struct
 func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
+	if cfg.Aws.Region != "" {
+		vault := &vault.AwsSecretsManager{
+			Description: cfg.Aws.Description,
+			Region:      cfg.Aws.Region,
+			SecretName:  hostname,
+		}
+
+		// Fallback to the cfg's secret name if it isn't an empty string
+		if cfg.Aws.SecretName != "" {
+			vault.SecretName = cfg.Aws.SecretName
+		}
+
+		return vault
+	}
+
 	if cfg.Azure.VaultUri != "" {
 		vault := &vault.AzureKeyVault{
 			SecretName: hostname,
@@ -58,16 +73,15 @@ func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
 		return vault
 	}
 
-	if cfg.Aws.Region != "" {
-		vault := &vault.AwsSecretsManager{
-			Description: cfg.Aws.Description,
-			Region:      cfg.Aws.Region,
-			SecretName:  hostname,
+	if cfg.HashiVault.VaultUri != "" {
+		vault := &vault.HashiVault{
+			EnvTokenName: cfg.HashiVault.EnvTokenName,
+			SecretName:   hostname,
+			VaultUri:     cfg.HashiVault.VaultUri,
 		}
 
-		// Fallback to the cfg's secret name if it isn't an empty string
-		if cfg.Aws.SecretName != "" {
-			vault.SecretName = cfg.Aws.SecretName
+		if cfg.HashiVault.SecretName != "" {
+			vault.SecretName = cfg.HashiVault.SecretName
 		}
 
 		return vault

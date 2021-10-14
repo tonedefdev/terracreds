@@ -8,16 +8,13 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/aws/aws-sdk-go v1.41.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.7.0 // indirect
+	github.com/aws/aws-sdk-go v1.41.0
 	github.com/danieljoos/wincred v1.1.0
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.9.0
-	github.com/kr/pretty v0.1.0 // indirect
-	github.com/stretchr/objx v0.1.1 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/hashicorp/vault/api v1.1.1
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/zalando/go-keyring v0.1.0
 	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
