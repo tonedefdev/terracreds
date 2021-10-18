@@ -75,8 +75,10 @@ func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
 
 	if cfg.HashiVault.VaultUri != "" {
 		vault := &vault.HashiVault{
-			EnvTokenName: cfg.HashiVault.EnvTokenName,
+			EnvTokenName: cfg.HashiVault.EnvironmentTokenName,
+			KeyVaultPath: cfg.HashiVault.KeyVaultPath,
 			SecretName:   hostname,
+			SecretPath:   cfg.HashiVault.SecretPath,
 			VaultUri:     cfg.HashiVault.VaultUri,
 		}
 
@@ -225,7 +227,7 @@ func main() {
 						user, err := user.Current()
 						helpers.CheckError(err)
 
-						vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+						vaultProvider := returnVaultProvider(&cfg, os.Args[2])
 
 						token, err := Terracreds.Get(provider, cfg, os.Args[2], user, vaultProvider)
 						if err != nil {

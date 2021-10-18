@@ -1,3 +1,8 @@
 logging:
   enabled: true
   path: C:/temp/
+hcvault:
+  environmentTokenName: HASHI_TOKEN
+  keyVaultPath: kv
+  secretPath: tfe
+  vaultUri: http://localhost:8200

@@ -10,7 +10,9 @@ import (
 
 type HashiVault struct {
 	EnvTokenName string
+	KeyVaultPath string
 	SecretName   string
+	SecretPath   string
 	VaultUri     string
 }
 
@@ -23,29 +25,53 @@ func (hc *HashiVault) newHashiVaultClient() *hcvault.Client {
 		helpers.CheckError(err)
 	}
 
+	client.SetToken(os.Getenv(hc.EnvTokenName))
+
 	return client
 }
 
 func (hc *HashiVault) Create(secretValue string) error {
-	return nil
+	client := hc.newHashiVaultClient()
+	secret := make(map[string]interface{})
+
+	key := hc.SecretName
+	data := make(map[string]interface{})
+	data[key] = secretValue
+	secret["data"] = data
+
+	kvPath := fmt.Sprintf("%s/data/%s", hc.KeyVaultPath, hc.SecretPath)
+	_, err := client.Logical().Write(kvPath, secret)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 func (hc *HashiVault) Delete() error {
-	return nil
+	client := hc.newHashiVaultClient()
+
+	kvPath := fmt.Sprintf("%s/data/%s", hc.KeyVaultPath, hc.SecretPath)
+	_, err := client.Logical().Delete(kvPath)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 func (hc *HashiVault) Get() ([]byte, error) {
 	client := hc.newHashiVaultClient()
-	client.SetToken(os.Getenv(hc.EnvTokenName))
 
-	secret, err := client.Logical().Read("kv-v2/data/creds")
+	kvPath := fmt.Sprintf("%s/data/%s", hc.KeyVaultPath, hc.SecretPath)
+	secret, err := client.Logical().Read(kvPath)
 
 	data, ok := secret.Data["data"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("data type assertion failed: %T %#v", secret.Data["data"], secret.Data["data"])
 	}
 
-	key := "password"
+	key := hc.SecretName
 	value, ok := data[key].(string)
 	if !ok {
 		return nil, fmt.Errorf("value type assertion failed: %T %#v", data[key], data[key])
