@@ -94,7 +94,7 @@ func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
 
 func main() {
 	var cfg api.Config
-	version := "1.1.2"
+	version := "2.0.0"
 
 	err := helpers.LoadConfig(&cfg)
 	if err != nil {
