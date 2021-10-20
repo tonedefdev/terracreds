@@ -74,6 +74,52 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
+resource "aws_iam_role" "ec2_role" {
+  count      = var.test_aws ? 1 : 0
+  name = "ec2_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "ec2_asm_rp" {
+  count      = var.test_aws ? 1 : 0
+  name = "ec2_asm_role_policy"
+  role = aws_iam_role.ec2_role[count.index].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:GetSecretValue",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "vm_profile" {
+  count = var.test_aws ? 1 : 0
+  name = "test_vm_profile"
+  role = aws_iam_role.ec2_role[count.index].id
+}
+
 resource "aws_key_pair" "test_vm_keys" {
   count      = var.test_aws ? 1 : 0
   key_name   = "test_vm_keys"
@@ -86,6 +132,7 @@ resource "aws_instance" "test_vm" {
   associate_public_ip_address = true
   availability_zone           = "us-west-2a"
   instance_type               = "t2.micro"
+  iam_instance_profile        = aws_iam_instance_profile.vm_profile[count.index].name
   key_name                    = aws_key_pair.test_vm_keys[count.index].key_name
   subnet_id                   = aws_subnet.vm_subnet[count.index].id
 

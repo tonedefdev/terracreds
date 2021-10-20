@@ -141,5 +141,5 @@ func (asm *AwsSecretsManager) Get() ([]byte, error) {
 		return nil, err
 	}
 
-	return result.SecretBinary, err
+	return []byte(*result.SecretString), err
 }
