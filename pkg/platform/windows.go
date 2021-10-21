@@ -81,6 +81,9 @@ func (w *Windows) Create(cfg api.Config, hostname string, token interface{}, use
 func (w *Windows) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
 	if vault != nil {
 		err := vault.Delete()
+		if err != nil {
+			return err
+		}
 
 		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 		helpers.Logging(cfg, msg, "INFO")
@@ -89,6 +92,7 @@ func (w *Windows) Delete(cfg api.Config, command string, hostname string, user *
 			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
+
 		return err
 	}
 
@@ -112,7 +116,7 @@ func (w *Windows) Delete(cfg api.Config, command string, hostname string, user *
 		fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 	}
 
-	return err
+	return nil
 }
 
 // Get retrieves a Terraform API token in Windows Credential Manager

@@ -2,6 +2,7 @@ package platform
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -21,6 +22,27 @@ type Mac struct{}
 func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
+
+	if cfg.Aws.Region != "" || cfg.Azure.VaultUri != "" {
+		return errors.New("Terracreds doesn't currently support using the AWS or Azure provider on macOS")
+	}
+
+	if vault != nil && cfg.HashiVault.VaultUri != "" {
+		_, err := vault.Get()
+		if err != nil {
+			method = "Created"
+		}
+
+		secretValue := fmt.Sprintf("%v", token)
+		err = vault.Create(secretValue, method)
+		if err != nil {
+			helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
+			return err
+		}
+
+		fmt.Fprintf(color.Output, "%s: %s the credential object '%s'\n", color.GreenString("SUCCESS"), method, hostname)
+		return err
+	}
 
 	_, err := keyring.Get(hostname, string(user.Username))
 	if err != nil {
@@ -62,6 +84,23 @@ func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *u
 
 // Delete removes or forgets a Terraform API token in MacOS Keyring
 func (m *Mac) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
+	if vault != nil {
+		err := vault.Delete()
+		if err != nil {
+			return err
+		}
+
+		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
+		helpers.Logging(cfg, msg, "INFO")
+
+		if command == "delete" {
+			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
+			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
+		}
+
+		return err
+	}
+
 	err := keyring.Delete(hostname, string(user.Username))
 	if err == nil {
 		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
@@ -78,7 +117,8 @@ func (m *Mac) Delete(cfg api.Config, command string, hostname string, user *user
 	if command == "delete" {
 		fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 	}
-	return err
+
+	return nil
 }
 
 // Get retrives a Terraform API token in MacOS Keyring
@@ -88,6 +128,20 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 		helpers.Logging(cfg, msg, "INFO")
 		msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
 		helpers.Logging(cfg, msg, "INFO")
+	}
+
+	if vault != nil {
+		token, err := vault.Get()
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		response := &api.CredentialResponse{
+			Token: string(token),
+		}
+
+		token, err = json.Marshal(response)
+		return token, err
 	}
 
 	secret, err := keyring.Get(hostname, string(user.Username))
@@ -108,6 +162,7 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 	if cfg.Logging.Enabled == true {
 		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 	}
+
 	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	return nil, err
 }

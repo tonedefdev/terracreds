@@ -81,6 +81,9 @@ func (l *Linux) Create(cfg api.Config, hostname string, token interface{}, user 
 func (l *Linux) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
 	if vault != nil {
 		err := vault.Delete()
+		if err != nil {
+			return err
+		}
 
 		msg := fmt.Sprintf("- the credential object '%s' has been removed", hostname)
 		helpers.Logging(cfg, msg, "INFO")
@@ -89,6 +92,7 @@ func (l *Linux) Delete(cfg api.Config, command string, hostname string, user *us
 			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
+
 		return err
 	}
 
@@ -101,6 +105,7 @@ func (l *Linux) Delete(cfg api.Config, command string, hostname string, user *us
 			msg := fmt.Sprintf("The credential object '%s' has been removed", hostname)
 			fmt.Fprintf(color.Output, "%s: %s\n", color.GreenString("SUCCESS"), msg)
 		}
+
 		return err
 	}
 
@@ -108,7 +113,8 @@ func (l *Linux) Delete(cfg api.Config, command string, hostname string, user *us
 	if command == "delete" {
 		fmt.Fprintf(color.Output, "%s: You do not have permission to modify this credential\n", color.RedString("ERROR"))
 	}
-	return err
+
+	return nil
 }
 
 // Get retrieves a Terraform API token in Gnome Keyring or an external vault provider
@@ -152,6 +158,7 @@ func (l *Linux) Get(cfg api.Config, hostname string, user *user.User, vault vaul
 	if cfg.Logging.Enabled == true {
 		helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 	}
+
 	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	return nil, err
 }

@@ -4,5 +4,6 @@ logging:
 hcvault:
   environmentTokenName: HASHI_TOKEN
   keyVaultPath: kv
+  secretName: something-dumb
   secretPath: tfe
   vaultUri: http://localhost:8200

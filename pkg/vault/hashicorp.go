@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -65,6 +66,9 @@ func (hc *HashiVault) Get() ([]byte, error) {
 
 	kvPath := fmt.Sprintf("%s/data/%s", hc.KeyVaultPath, hc.SecretPath)
 	secret, err := client.Logical().Read(kvPath)
+	if secret == nil {
+		return nil, errors.New("No secet. Need to create.")
+	}
 
 	data, ok := secret.Data["data"].(map[string]interface{})
 	if !ok {

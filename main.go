@@ -104,29 +104,30 @@ func main() {
 	provider := returnProvider(runtime.GOOS)
 	if provider == nil {
 		fmt.Fprintf(color.Output, "%s: Terracreds cannot run on this platform: '%s'\n", color.RedString("ERROR"), runtime.GOOS)
+		return
 	}
 
 	app := &cli.App{
 		Name:      "terracreds",
-		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages the local operating system's credential manager for securely storing your API tokens.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
+		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages your vault provider of choice for securely storing your API tokens or other secrets.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
 		UsageText: "Directly store credentials from Terraform using 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -t myAPItoken'",
 		Version:   version,
 		Commands: []*cli.Command{
 			{
 				Name:  "create",
-				Usage: "Manually create or update a credential object in the local operating sytem's credential manager that contains the Terraform Cloud/Enterprise authorization token",
+				Usage: "Manually create or update a credential object in the vault provider of your choice that contains the Terraform Cloud/Enterprise authorization token or another secret",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
 						Aliases: []string{"n"},
-						Value:   "",
-						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname. This is also the display name of the credential object",
+						Value:   "place_holder",
+						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object",
 					},
 					&cli.StringFlag{
 						Name:    "apiToken",
 						Aliases: []string{"t"},
 						Value:   "",
-						Usage:   "The Terraform Cloud/Enterprise API authorization token to be securely stored in the local operating system's credential manager",
+						Usage:   "The Terraform Cloud/Enterprise API authorization token or other secret value to be securely stored in your vault provider of choice",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -136,10 +137,11 @@ func main() {
 					}
 
 					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Create(provider, cfg, c.String("hostname"), c.String("apiToken"), user, vaultProvider)
+					err = Terracreds.Create(provider, cfg, hostname, c.String("apiToken"), user, vaultProvider)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -149,13 +151,13 @@ func main() {
 			},
 			{
 				Name:  "delete",
-				Usage: "Delete a stored credential in the local operating system's credential manager",
+				Usage: "Delete a stored credential in the vault provider of your choice",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "hostname",
 						Aliases: []string{"n"},
-						Value:   "",
-						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname. This is also the display name of the credential object",
+						Value:   "place_holder",
+						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object.",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -172,10 +174,11 @@ func main() {
 					}
 
 					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user, vaultProvider)
+					err = Terracreds.Delete(provider, cfg, os.Args[1], hostname, user, vaultProvider)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -185,18 +188,19 @@ func main() {
 			},
 			{
 				Name:  "forget",
-				Usage: "(Terraform Only) Forget a stored credential when 'terraform logout' has been called",
+				Usage: "(Terraform Only) Forget a stored credential in your vault provider of choice when 'terraform logout' has been called",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds forget -h' for help info\n", color.RedString("ERROR"))
 						return nil
 					}
 
-					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+					vaultProvider := returnVaultProvider(&cfg, os.Args[2])
+					hostname := helpers.GetSecretName(&cfg, os.Args[2])
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Delete(provider, cfg, os.Args[1], os.Args[2], user, vaultProvider)
+					err = Terracreds.Delete(provider, cfg, os.Args[1], hostname, user, vaultProvider)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -221,15 +225,16 @@ func main() {
 			},
 			{
 				Name:  "get",
-				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
+				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument or the name of the secret. The credential is returned as a JSON object and formatted for consumption by Terraform",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) > 2 {
 						user, err := user.Current()
 						helpers.CheckError(err)
 
 						vaultProvider := returnVaultProvider(&cfg, os.Args[2])
+						hostname := helpers.GetSecretName(&cfg, os.Args[2])
 
-						token, err := Terracreds.Get(provider, cfg, os.Args[2], user, vaultProvider)
+						token, err := Terracreds.Get(provider, cfg, hostname, user, vaultProvider)
 						if err != nil {
 							helpers.CheckError(err)
 						}
@@ -245,18 +250,19 @@ func main() {
 			},
 			{
 				Name:  "store",
-				Usage: "(Terraform Only) Store or update a credential object in the local operating sytem's credential manager when 'terraform login' has been called",
+				Usage: "(Terraform Only) Store or update a credential object in your vault provider of choice when 'terraform login' has been called",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
 						return nil
 					}
 
-					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+					vaultProvider := returnVaultProvider(&cfg, os.Args[2])
+					hostname := helpers.GetSecretName(&cfg, os.Args[2])
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Create(provider, cfg, os.Args[2], nil, user, vaultProvider)
+					err = Terracreds.Create(provider, cfg, hostname, nil, user, vaultProvider)
 					if err != nil {
 						helpers.CheckError(err)
 					}
