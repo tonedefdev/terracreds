@@ -30,7 +30,7 @@ func (hc *HashiVault) newHashiVaultClient() *hcvault.Client {
 	return client
 }
 
-func (hc *HashiVault) Create(secretValue string) error {
+func (hc *HashiVault) Create(secretValue string, method string) error {
 	client := hc.newHashiVaultClient()
 	secret := make(map[string]interface{})
 

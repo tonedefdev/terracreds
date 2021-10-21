@@ -39,7 +39,7 @@ func formatSecretName(secretName string) string {
 }
 
 // Create stores a secret in an Azure Key Vault
-func (akv *AzureKeyVault) Create(secretValue string) error {
+func (akv *AzureKeyVault) Create(secretValue string, method string) error {
 	ctx := context.Background()
 	client := getVaultClientMSI()
 

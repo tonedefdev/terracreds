@@ -30,8 +30,46 @@ func (asm *AwsSecretsManager) getAwsSecetsManager() *secretsmanager.SecretsManag
 	return svc
 }
 
-func (asm *AwsSecretsManager) Create(secretValue string) error {
+func (asm *AwsSecretsManager) Create(secretValue string, method string) error {
 	svc := asm.getAwsSecetsManager()
+
+	if method == "Updated" {
+		input := &secretsmanager.PutSecretValueInput{
+			SecretId:     aws.String(asm.SecretName),
+			SecretString: aws.String(secretValue),
+		}
+
+		_, err := svc.PutSecretValue(input)
+		if err != nil {
+			if aerr, ok := err.(awserr.Error); ok {
+				switch aerr.Code() {
+				case secretsmanager.ErrCodeInvalidParameterException:
+					fmt.Println(secretsmanager.ErrCodeInvalidParameterException, aerr.Error())
+				case secretsmanager.ErrCodeInvalidRequestException:
+					fmt.Println(secretsmanager.ErrCodeInvalidRequestException, aerr.Error())
+				case secretsmanager.ErrCodeLimitExceededException:
+					fmt.Println(secretsmanager.ErrCodeLimitExceededException, aerr.Error())
+				case secretsmanager.ErrCodeEncryptionFailure:
+					fmt.Println(secretsmanager.ErrCodeEncryptionFailure, aerr.Error())
+				case secretsmanager.ErrCodeResourceExistsException:
+					fmt.Println(secretsmanager.ErrCodeResourceExistsException, aerr.Error())
+				case secretsmanager.ErrCodeResourceNotFoundException:
+					fmt.Println(secretsmanager.ErrCodeResourceNotFoundException, aerr.Error())
+				case secretsmanager.ErrCodeInternalServiceError:
+					fmt.Println(secretsmanager.ErrCodeInternalServiceError, aerr.Error())
+				default:
+					fmt.Println(aerr.Error())
+				}
+			} else {
+				// Print the error, cast err to awserr.Error to get the Code and
+				// Message from an error.
+				fmt.Println(err.Error())
+			}
+			return err
+		}
+
+		return err
+	}
 
 	input := &secretsmanager.CreateSecretInput{
 		Description:  aws.String(asm.Description),

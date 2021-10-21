@@ -106,6 +106,7 @@ resource "aws_iam_role_policy" "ec2_asm_rp" {
           "secretsmanager:CreateSecret",
           "secretsmanager:DeleteSecret",
           "secretsmanager:GetSecretValue",
+          "secretsmanager:PutSecretValue"
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -139,4 +140,9 @@ resource "aws_instance" "test_vm" {
   vpc_security_group_ids = [
     aws_security_group.allow_ssh[count.index].id
   ]
+}
+
+output "vm_public_ip" {
+  value = aws_instance.test_vm[*].public_ip
+  description = "The public IP of the VM"
 }

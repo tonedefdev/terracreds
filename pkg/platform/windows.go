@@ -29,7 +29,7 @@ func (w *Windows) Create(cfg api.Config, hostname string, token interface{}, use
 		}
 
 		secretValue := fmt.Sprintf("%v", token)
-		err = vault.Create(secretValue)
+		err = vault.Create(secretValue, method)
 		if err != nil {
 			helpers.Logging(cfg, fmt.Sprintf("- %s", err), "ERROR")
 			return err
