@@ -186,6 +186,8 @@ Success! Terraform has removed the stored API token for app.terraform.io.
 Additionally, you can check the `terracreds.log` if logging is enabled for more information
 
 ## Setting Up a Vault Provider
+> You can reference example configs in our [repo](https://github.com/tonedefdev/terracreds/blob/main/config.yaml) plus we have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation
+
 ### AWS Secrets Manager
 > Currently, we only support using an `EC2 Instance Role` for authentication. This ensures the highest level of security by alleviating the `secret zero` dilemma
 
@@ -258,8 +260,6 @@ hcvault:
 | `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TFC\TFE server will be used for the name instead | `no` |
 | `secretPath` | The path of the secret within `HashiCorp Vault` | `yes` |
 | `vaultUri` | The URI for the `HashiCorp Vault` instance | `yes` |
-
-> You can also reference an example config in our [repo](https://github.com/tonedefdev/terracreds)
 
 ## Protection
 In order to add some protection `terracreds` adds a username to the credential object to secrets stored in the local operating system, and checks to ensure that the user requesting access to the token is the same user as the token's creator. This means that only the user account used to create the token can view the token from `terracreds` which ensures that the token can only be read by the account used to create it. Any attempt to access or modify this token from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts
