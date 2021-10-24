@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -95,16 +96,21 @@ func TestGenerateTerracreds(t *testing.T) {
 
 func TestTerracreds(t *testing.T) {
 	var cfg api.Config
-	provider := returnProvider(runtime.GOOS)
-
 	const hostname = "terracreds.test.io"
 	const apiToken = "9ZWRa0Ge0iQCtA.atlasv1.HpZAd8426rHFskeEFo3AzimnkfR1ldYy69zz0op0NJZ79et8nrgjw3lQfi0FyJ1o8iw"
 	const command = "delete"
 
+	provider := returnProvider(runtime.GOOS)
+	vaultProvider := returnVaultProvider(&cfg, hostname)
+
 	user, err := user.Current()
 	helpers.CheckError(err)
 
-	Terracreds.Create(provider, cfg, hostname, apiToken, user)
-	Terracreds.Get(provider, cfg, hostname, user)
-	Terracreds.Delete(provider, cfg, command, hostname, user)
+	Terracreds.Create(provider, cfg, hostname, apiToken, user, vaultProvider)
+	token, err := Terracreds.Get(provider, cfg, hostname, user, vaultProvider)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+	fmt.Println(string(token))
+	Terracreds.Delete(provider, cfg, command, hostname, user, vaultProvider)
 }

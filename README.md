@@ -3,7 +3,7 @@
 <img src="https://github.com/tonedefdev/terracreds/blob/main/img/terracreds.png?raw=true" align="right" width="350" height="350">
 
 # Terracreds
-A credential helper for Terraform Cloud/Enterprise that allows secure storage of your API token within the operating system's vault instead of in a plain text configuration file
+A credential helper for Terraform Cloud/Enterprise, or to store other secrets, securely in the operating system's credential vault or through a third party vault. No longer keep secrets in a plain text configuration file!
 
 We all know storing secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to help enable stronger security practices
 
@@ -12,10 +12,16 @@ We all know storing secrets in plain text can pose major security threats, and T
 - [x] MacOS (Keychain)
 - [x] Linux (gnome-keyring) *Tested on Ubuntu 20.04*
 
+#### Currently supported Vault providers:
+- [x] AWS Secrets Manager
+- [x] Azure Key Vault
+- [ ] Google Secret Manager 
+- [x] HashiCorp Vault
+
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
 ```powershell
-choco install terracreds -y
+choco install terracreds --version "2.0.0" -y
 ```
 
 Once installed run the following command to verify `terracreds` was installed properly:
@@ -25,7 +31,7 @@ terracreds -v
 
 To upgrade `terracreds` to the latest version with Chocolatey run the the following command:
 ```powershell
-choco upgrade terracreds -y
+choco upgrade terracreds --version "2.0.0" -y
 ```
 
 ## macOS Install
@@ -36,10 +42,10 @@ extract the package, and then place it in a directory available on `$HOME`
 You'll need to download the latest binary from our release page and place it anywhere on `$PATH` of your system. You can also copy and run the following commands:
 
 ```bash
-wget https://github.com/tonedefdev/terracreds/releases/download/v1.1.1/terracreds_1.1.1_linux_amd64.tar.gz && \
-tar -xvf terracreds_1.1.1_linux_amd64.tar.gz && \
+wget https://github.com/tonedefdev/terracreds/releases/download/v2.0.0/terracreds_2.0.0_linux_amd64.tar.gz && \
+tar -xvf terracreds_2.0.0_linux_amd64.tar.gz && \
 sudo mv -f terracreds /usr/bin/terracreds && \
-rm -f terracreds_1.1.1_linux_amd64.tar.gz README.md
+rm -f terracreds_2.0.0_linux_amd64.tar.gz README.md
 ```
 
 The `terracreds` Linux implementation uses `gnome-keyring` in conjunction with `gnome-keyring-daemon` 
@@ -179,8 +185,84 @@ Success! Terraform has removed the stored API token for app.terraform.io.
 
 Additionally, you can check the `terracreds.log` if logging is enabled for more information
 
+## Setting Up a Vault Provider
+> You can reference example configs in our [repo](https://github.com/tonedefdev/terracreds/blob/main/config.yaml) plus we have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation
+
+### AWS Secrets Manager
+> Currently, we only support using an `EC2 Instance Role` for authentication. This ensures the highest level of security by alleviating the `secret zero` dilemma
+
+In order to leverage `terracreds` to manage secrets in `AWS Secrets Manager` the following block needs to be provided in the configuration file:
+```yaml
+aws:
+  description: my_terraform_api_token
+  region: us-west-2
+  secretName: my-secret-name
+```
+
+| Value | Description | Required |
+| ----- | ----------- | -------- |
+| `description` | A brief description to provide for the secret object viewable in `Secrets Manager` | `yes` |
+| `region` | The `Secrets Manager` instance's region where the secret will be stored | `yes` | 
+| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TFC\TFE server will be used for the name instead | `no` |
+
+The following role permissions are required in order for the `EC2 Instance Role` to levearge `terracreds` with `AWS Secrets Manager`:
+```hcl
+Action = [
+  "secretsmanager:CreateSecret",
+  "secretsmanager:DeleteSecret",
+  "secretsmanager:GetSecretValue",
+  "secretsmanager:PutSecretValue"
+]
+```
+### Azure Key Vault
+> Currently, we only support using a `Managed Service Identity` for authentication. This ensures the highest level of security by alleviating the `secret zero` dilemma
+
+In order to leverage `terracreds` to manage secrets in `Azure Key Vault` the following block needs to be provided in the configuration file:
+```yaml
+azure:
+  secretName: my-secret-name
+  useMSI: true
+  vaultUri: https://keyvault.azure.net
+```
+
+| Value | Description | Required |
+| ----- | ----------- | -------- |
+| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TFC\TFE server will be used for the name instead | `no` |
+| `useMSI` | A flag to choose whether or not to use `Manged Service Identity`. Currently, `true` is required | `yes` | 
+| `vaultUri` | The URI for the `Azure Key Vault` where you want to store or retrieve your credentials | `yes` |
+
+The following `Azure Key Vault Access Policies` are required to be given to the `Managed Service Identity` for it to leverage `terracreds`:
+```hcl
+secret_permissions = [
+  "Get",
+  "List",
+  "Set",
+  "Delete"
+]
+```
+> Since `Azure Key Vault` doesn't support the period character in a secret name a helper function will replace any periods with dashes so they can be successfully stored. This means a `terraform` API token name that would usually be `app.terraform.io` will become `app-terraform-io`
+
+### HashiCorp Vault
+In order to leverage `terracreds` to manage secrets in `HashiCorp Vault` the following block needs to be provided in the configuration file:
+```yaml
+hcvault:
+  environmentTokenName: HASHI_TOKEN
+  keyVaultPath: kv
+  secretName: my-secret-name
+  secretPath: tfe
+  vaultUri: http://localhost:8200
+```
+
+| Value | Description | Required |
+| ----- | ----------- | -------- |
+| `environmentTokenName` | The name of the environment variable that contains the token value to authenticate with `HashiCorp Vault` | `yes` |
+| `keyVaultPath` | The path to the `Key Vault` object within the vault | `yes` |
+| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TFC\TFE server will be used for the name instead | `no` |
+| `secretPath` | The path of the secret within `HashiCorp Vault` | `yes` |
+| `vaultUri` | The URI for the `HashiCorp Vault` instance | `yes` |
+
 ## Protection
-In order to add some protection `terracreds` adds a username to the credential object, and checks to ensure that the user requesting access to the token is the same user as the token's creator. This means that only the user account used to create the token can view the token from `terracreds` which ensures that the token can only be read by the account used to create it. Any attempt to access or modify this token from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts
+In order to add some protection `terracreds` adds a username to the credential object to secrets stored in the local operating system, and checks to ensure that the user requesting access to the token is the same user as the token's creator. This means that only the user account used to create the token can view the token from `terracreds` which ensures that the token can only be read by the account used to create it. Any attempt to access or modify this token from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts
 
 ## Logging
 Wherever either binary is stored `terracreds` or `terraform-credential-terracreds` a `config.yaml` file is generated on first launch of the binary. Currently, this configuration file only enables/disables logging and sets the log path. If logging is enabled you'll find the log named `terracreds.log` at the provided path 

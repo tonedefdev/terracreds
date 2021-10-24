@@ -1,0 +1,17 @@
+logging:
+  enabled: true
+  path: C:/temp/
+aws:
+  description: my_secret_name
+  region: us-west-2
+  secretName: my-secret
+azure:
+  secretName: my-secret-name
+  useMSI: true
+  vaultUri: https://keyvault.azure.net
+hcvault:
+  environmentTokenName: HASHI_TOKEN
+  keyVaultPath: kv
+  secretName: something-dumb
+  secretPath: tfe
+  vaultUri: http://localhost:8200

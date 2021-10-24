@@ -217,3 +217,18 @@ func GenerateTerracreds(c *cli.Context) {
 		WriteToFile(cliConfig, doc)
 	}
 }
+
+// GetSecretName returns the name of the secret from the config
+// or returns the hostname value from the CLI
+func GetSecretName(cfg *api.Config, hostname string) string {
+	if cfg.Aws.SecretName != "" {
+		return cfg.Aws.SecretName
+	}
+	if cfg.Azure.SecretName != "" {
+		return cfg.Azure.SecretName
+	}
+	if cfg.HashiVault.SecretName != "" {
+		return cfg.HashiVault.SecretName
+	}
+	return hostname
+}
