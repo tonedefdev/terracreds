@@ -83,3 +83,7 @@ func (hc *HashiVault) Get() ([]byte, error) {
 
 	return []byte(value), err
 }
+
+func (hc *HashiVault) List(secretNames []string) ([]string, error) {
+	return nil, nil
+}

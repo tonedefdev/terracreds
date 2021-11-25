@@ -162,3 +162,7 @@ func (l *Linux) Get(cfg api.Config, hostname string, user *user.User, vault vaul
 	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	return nil, err
 }
+
+func (l *Linux) List(cfg api.Config, secretNames []byte, vault vault.TerraVault) ([]string, error) {
+	return nil, nil
+}

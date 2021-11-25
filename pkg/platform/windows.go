@@ -165,3 +165,7 @@ func (w *Windows) Get(cfg api.Config, hostname string, user *user.User, vault va
 	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	return nil, err
 }
+
+func (w *Windows) List(cfg api.Config, secretNames []byte, vault vault.TerraVault) ([]string, error) {
+	return nil, nil
+}

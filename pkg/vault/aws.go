@@ -181,3 +181,7 @@ func (asm *AwsSecretsManager) Get() ([]byte, error) {
 
 	return []byte(*result.SecretString), err
 }
+
+func (asm *AwsSecretsManager) List(secretNames []string) ([]string, error) {
+	return nil, nil
+}

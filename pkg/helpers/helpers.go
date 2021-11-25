@@ -188,7 +188,7 @@ func LogLevel(level string) string {
 
 // GenerateTerracreds creates the binary to use this package as a credential helper
 // and optionally the terraform.rc file
-func GenerateTerracreds(c *cli.Context) {
+func GenerateTerraCreds(c *cli.Context) {
 	var cliConfig string
 	var tfPlugins string
 	var binary string

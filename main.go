@@ -16,18 +16,20 @@ import (
 	"github.com/tonedefdev/terracreds/pkg/vault"
 )
 
-// Terracreds interface implements these methods for a credential's lifecycle
-type Terracreds interface {
-	// Create or store an API token in a vault
+// TerraCreds interface implements these methods for a credential's lifecycle
+type TerraCreds interface {
+	// Create or store a secret in a vault
 	Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error
-	// Delete or forget an API token in a vault
+	// Delete or forget a secret in a vault
 	Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error
-	// Get or retrieve an API token in a vault
+	// Get or retrieve a secret in a vault
 	Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error)
+	// List the secrets from within a vault
+	List(cfg api.Config, secretNames []byte, vault vault.TerraVault) ([]string, error)
 }
 
-// returnProvider returns the correct struct for the specific operating system
-func returnProvider(os string) Terracreds {
+// NewTerraCreds is the constructor to create a TerraCreds interface
+func NewTerraCreds(os string) TerraCreds {
 	switch os {
 	case "darwin":
 		return &platform.Mac{}
@@ -40,9 +42,9 @@ func returnProvider(os string) Terracreds {
 	}
 }
 
-// returnsVaultProvider handles returning the correct vault provider based on the
-// api.Config struct
-func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
+// NewTerrVault is the constructor to create a TerraVault interface
+// for the vault provider defined in the cfg
+func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 	if cfg.Aws.Region != "" {
 		vault := &vault.AwsSecretsManager{
 			Description: cfg.Aws.Description,
@@ -50,7 +52,6 @@ func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
 			SecretName:  hostname,
 		}
 
-		// Fallback to the cfg's secret name if it isn't an empty string
 		if cfg.Aws.SecretName != "" {
 			vault.SecretName = cfg.Aws.SecretName
 		}
@@ -65,7 +66,6 @@ func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
 			VaultUri:   cfg.Azure.VaultUri,
 		}
 
-		// Fallback to the cfg's secret name if it isn't an empty string
 		if cfg.Azure.SecretName != "" {
 			vault.SecretName = cfg.Azure.SecretName
 		}
@@ -94,16 +94,16 @@ func returnVaultProvider(cfg *api.Config, hostname string) vault.TerraVault {
 
 func main() {
 	var cfg api.Config
-	version := "2.0.0"
+	version := "2.0.1"
 
 	err := helpers.LoadConfig(&cfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
 
-	provider := returnProvider(runtime.GOOS)
-	if provider == nil {
-		fmt.Fprintf(color.Output, "%s: Terracreds cannot run on this platform: '%s'\n", color.RedString("ERROR"), runtime.GOOS)
+	terraCreds := NewTerraCreds(runtime.GOOS)
+	if terraCreds == nil {
+		fmt.Fprintf(color.Output, "%s: terracreds cannot run on this platform: '%s'\n", color.RedString("ERROR"), runtime.GOOS)
 		return
 	}
 
@@ -136,12 +136,13 @@ func main() {
 						return nil
 					}
 
-					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+					terraVault := NewTerraVault(&cfg, c.String("hostname"))
 					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Create(provider, cfg, hostname, c.String("apiToken"), user, vaultProvider)
+
+					err = terraCreds.Create(cfg, hostname, c.String("apiToken"), user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -173,12 +174,14 @@ func main() {
 						return nil
 					}
 
-					vaultProvider := returnVaultProvider(&cfg, c.String("hostname"))
+					terraVault := NewTerraVault(&cfg, c.String("hostname"))
 					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
+					method := os.Args[1]
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Delete(provider, cfg, os.Args[1], hostname, user, vaultProvider)
+
+					err = terraCreds.Delete(cfg, method, hostname, user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -195,12 +198,14 @@ func main() {
 						return nil
 					}
 
-					vaultProvider := returnVaultProvider(&cfg, os.Args[2])
+					terraVault := NewTerraVault(&cfg, os.Args[2])
 					hostname := helpers.GetSecretName(&cfg, os.Args[2])
+					method := os.Args[1]
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Delete(provider, cfg, os.Args[1], hostname, user, vaultProvider)
+
+					err = terraCreds.Delete(cfg, method, hostname, user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -219,7 +224,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					helpers.GenerateTerracreds(c)
+					helpers.GenerateTerraCreds(c)
 					return nil
 				},
 			},
@@ -231,14 +236,54 @@ func main() {
 						user, err := user.Current()
 						helpers.CheckError(err)
 
-						vaultProvider := returnVaultProvider(&cfg, os.Args[2])
+						terraVault := NewTerraVault(&cfg, os.Args[2])
 						hostname := helpers.GetSecretName(&cfg, os.Args[2])
 
-						token, err := Terracreds.Get(provider, cfg, hostname, user, vaultProvider)
+						token, err := terraCreds.Get(cfg, hostname, user, terraVault)
 						if err != nil {
 							helpers.CheckError(err)
 						}
+
 						fmt.Println(string(token))
+						return nil
+					}
+
+					msg := "A hostname was expected after the 'get' command but no argument was provided"
+					helpers.Logging(cfg, msg, "ERROR")
+					fmt.Fprintf(color.Output, "%s: %s\n", color.RedString("ERROR"), msg)
+					return nil
+				},
+			},
+			{
+				Name:  "list",
+				Usage: "List the credentials stored in a vault using a list provided",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "secret-names",
+						Aliases: []string{"s"},
+						Value:   "",
+						Usage:   "A comma separated list of secret names to retrieve to retrieved",
+					},
+					&cli.StringFlag{
+						Name:    "input-file",
+						Aliases: []string{"f"},
+						Value:   "",
+						Usage:   "The path to the file that provides the list of secrets to be retrieved",
+					},
+					&cli.BoolFlag{
+						Name:  "export-as-tfvars",
+						Value: false,
+						Usage: "Exports the secret keys and values as 'TF_VARS_secret_key=secret_value' for the given operating system",
+					},
+					&cli.BoolFlag{
+						Name:  "export-as-env",
+						Value: false,
+						Usage: "Exports the secret values and exposes them as environment variables for the given operating system",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					if len(os.Args) > 1 {
+
 						return nil
 					}
 
@@ -257,12 +302,13 @@ func main() {
 						return nil
 					}
 
-					vaultProvider := returnVaultProvider(&cfg, os.Args[2])
+					terraVault := NewTerraVault(&cfg, os.Args[2])
 					hostname := helpers.GetSecretName(&cfg, os.Args[2])
 
 					user, err := user.Current()
 					helpers.CheckError(err)
-					err = Terracreds.Create(provider, cfg, hostname, nil, user, vaultProvider)
+
+					err = terraCreds.Create(cfg, hostname, nil, user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}

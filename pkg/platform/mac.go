@@ -24,7 +24,7 @@ func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *u
 	method = "Updated"
 
 	if cfg.Aws.Region != "" || cfg.Azure.VaultUri != "" {
-		return errors.New("Terracreds doesn't currently support using the AWS or Azure provider on macOS")
+		return errors.New("terracreds doesn't currently support using the AWS or Azure provider on macOS")
 	}
 
 	if vault != nil && cfg.HashiVault.VaultUri != "" {
@@ -165,4 +165,8 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 
 	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	return nil, err
+}
+
+func (m *Mac) List(cfg api.Config, secretNames []byte, vault vault.TerraVault) ([]string, error) {
+	return nil, nil
 }

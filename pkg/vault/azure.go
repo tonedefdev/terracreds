@@ -72,3 +72,7 @@ func (akv *AzureKeyVault) Get() ([]byte, error) {
 	get, err := client.GetSecret(ctx, akv.VaultUri, secret, "")
 	return []byte(*get.Value), err
 }
+
+func (akv *AzureKeyVault) List(secretNames []string) ([]string, error) {
+	return nil, nil
+}

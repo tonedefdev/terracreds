@@ -6,4 +6,5 @@ type TerraVault interface {
 	Create(secretValue string, method string) error
 	Delete() error
 	Get() ([]byte, error)
+	List(secretNames []string) ([]string, error)
 }

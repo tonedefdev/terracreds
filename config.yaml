@@ -1,6 +1,10 @@
+### Example Config File
 logging:
   enabled: true
   path: C:/temp/
+### This example shows all parameters available for currently supported
+### vaults and is not meant to be used as shown.
+### Only one external vault provider can be used at a time!
 aws:
   description: my_secret_name
   region: us-west-2
