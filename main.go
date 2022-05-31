@@ -25,7 +25,7 @@ type TerraCreds interface {
 	// Get or retrieve a secret in a vault
 	Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error)
 	// List the secrets from within a vault
-	List(cfg api.Config, secretNames []byte, vault vault.TerraVault) ([]string, error)
+	List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error)
 }
 
 // NewTerraCreds is the constructor to create a TerraCreds interface
@@ -94,7 +94,7 @@ func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 
 func main() {
 	var cfg api.Config
-	version := "2.0.1"
+	version := "2.0.2"
 
 	err := helpers.LoadConfig(&cfg)
 	if err != nil {
@@ -113,6 +113,43 @@ func main() {
 		UsageText: "Directly store credentials from Terraform using 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -t myAPItoken'",
 		Version:   version,
 		Commands: []*cli.Command{
+			{
+				Name:  "config",
+				Usage: "View or modify the Terracreds configuration file",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "hostname",
+						Aliases: []string{"n"},
+						Value:   "place_holder",
+						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object",
+					},
+					&cli.StringFlag{
+						Name:    "apiToken",
+						Aliases: []string{"t"},
+						Value:   "",
+						Usage:   "The Terraform Cloud/Enterprise API authorization token or other secret value to be securely stored in your vault provider of choice",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					if len(os.Args) == 2 {
+						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
+						return nil
+					}
+
+					terraVault := NewTerraVault(&cfg, c.String("hostname"))
+					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
+
+					user, err := user.Current()
+					helpers.CheckError(err)
+
+					err = terraCreds.Create(cfg, hostname, c.String("apiToken"), user, terraVault)
+					if err != nil {
+						helpers.CheckError(err)
+					}
+
+					return nil
+				},
+			},
 			{
 				Name:  "create",
 				Usage: "Manually create or update a credential object in the vault provider of your choice that contains the Terraform Cloud/Enterprise authorization token or another secret",
@@ -256,13 +293,13 @@ func main() {
 			},
 			{
 				Name:  "list",
-				Usage: "List the credentials stored in a vault using a list provided",
+				Usage: "List the credentials stored in a vault using a provided set of secret names",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "secret-names",
 						Aliases: []string{"s"},
 						Value:   "",
-						Usage:   "A comma separated list of secret names to retrieve to retrieved",
+						Usage:   "A comma separated list of secret names to be retrieved",
 					},
 					&cli.StringFlag{
 						Name:    "input-file",
@@ -275,14 +312,26 @@ func main() {
 						Value: false,
 						Usage: "Exports the secret keys and values as 'TF_VARS_secret_key=secret_value' for the given operating system",
 					},
-					&cli.BoolFlag{
-						Name:  "export-as-env",
-						Value: false,
-						Usage: "Exports the secret values and exposes them as environment variables for the given operating system",
-					},
 				},
 				Action: func(c *cli.Context) error {
 					if len(os.Args) > 1 {
+						terraVault := NewTerraVault(&cfg, os.Args[2])
+						secretNames := strings.Split(c.String("secret-names"), ",")
+
+						user, err := user.Current()
+						if err != nil {
+							helpers.CheckError(err)
+						}
+
+						list, err := terraCreds.List(c, cfg, secretNames, user, terraVault)
+						if err != nil {
+							helpers.CheckError(err)
+						}
+
+						for _, secret := range list {
+							value := fmt.Sprintf("%s\n", secret)
+							print(value)
+						}
 
 						return nil
 					}

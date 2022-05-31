@@ -9,6 +9,7 @@ import (
 
 	"github.com/danieljoos/wincred"
 	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
 
 	"github.com/tonedefdev/terracreds/api"
 	"github.com/tonedefdev/terracreds/pkg/helpers"
@@ -46,8 +47,16 @@ func (w *Windows) Create(cfg api.Config, hostname string, token interface{}, use
 
 	cred := wincred.NewGenericCredential(hostname)
 	if token == nil {
-		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
-		cred.CredentialBlob = []byte(api.CredentialResponse{}.Token)
+		var response api.CredentialResponse
+
+		err = json.NewDecoder(os.Stdin).Decode(&response)
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		cred.CredentialBlob = []byte(response.Token)
+		cred.UserName = string(user.Username)
+		err = cred.Write()
 		return err
 	}
 
@@ -166,6 +175,24 @@ func (w *Windows) Get(cfg api.Config, hostname string, user *user.User, vault va
 	return nil, err
 }
 
-func (w *Windows) List(cfg api.Config, secretNames []byte, vault vault.TerraVault) ([]string, error) {
-	return nil, nil
+func (w *Windows) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
+	var secretValues []string
+
+	for _, secret := range secretNames {
+		cred, err := wincred.GetGenericCredential(secret)
+		if err == nil && cred.UserName == user.Username {
+			value := string(cred.CredentialBlob)
+
+			if c.Bool("export-as-tfvars") {
+				fmt.Printf("TF_VAR_%s=%s\n", secret, value)
+				continue
+			}
+
+			secretValues = append(secretValues, value)
+		} else {
+			return nil, err
+		}
+	}
+
+	return secretValues, nil
 }

@@ -13,6 +13,7 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/hashicorp/vault/api v1.1.1
+	github.com/urfave/cli v0.0.0-20171014202726-7bc6a0acffa5
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/zalando/go-keyring v0.1.0
 	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect

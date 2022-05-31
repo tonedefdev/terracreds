@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
 	"github.com/zalando/go-keyring"
 
 	"github.com/tonedefdev/terracreds/api"
@@ -50,11 +51,14 @@ func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *u
 	}
 
 	if token == nil {
-		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
+		var response api.CredentialResponse
+
+		err = json.NewDecoder(os.Stdin).Decode(&response)
 		if err != nil {
 			helpers.CheckError(err)
 		}
-		err = keyring.Set(hostname, string(user.Username), api.CredentialResponse{}.Token)
+
+		err = keyring.Set(hostname, string(user.Username), response.Token)
 		return err
 	}
 
@@ -167,6 +171,6 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 	return nil, err
 }
 
-func (m *Mac) List(cfg api.Config, secretNames []byte, vault vault.TerraVault) ([]string, error) {
+func (m *Mac) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
 	return nil, nil
 }

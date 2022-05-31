@@ -18,9 +18,10 @@ type AzureKeyVault struct {
 
 // getVaultClientMSI returns a keyvault.BaseClient with an MSI authorizer for an Azure Key Vault resource
 func getVaultClientMSI() keyvault.BaseClient {
+	const vaultUri = "https://vault.azure.net"
 	vaultClient := keyvault.New()
 	msiConfig := auth.NewMSIConfig()
-	msiConfig.Resource = "https://vault.azure.net"
+	msiConfig.Resource = vaultUri
 
 	authorizer, err := msiConfig.Authorizer()
 	if err != nil {
