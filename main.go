@@ -9,11 +9,17 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/tonedefdev/terracreds/api"
 	"github.com/tonedefdev/terracreds/pkg/helpers"
 	"github.com/tonedefdev/terracreds/pkg/platform"
 	"github.com/tonedefdev/terracreds/pkg/vault"
+)
+
+var (
+	cfg            api.Config
+	configFilePath string
 )
 
 // TerraCreds interface implements these methods for a credential's lifecycle
@@ -93,10 +99,22 @@ func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 }
 
 func main() {
-	var cfg api.Config
-	version := "2.0.2"
+	version := "2.1.0"
 
-	err := helpers.LoadConfig(&cfg)
+	fileEnvVar := os.Getenv("TC_CONFIG_PATH")
+	if fileEnvVar != "" {
+		configFilePath = fileEnvVar + "config.yaml"
+	} else {
+		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
+		configFilePath = binPath + "config.yaml"
+	}
+
+	err := helpers.CreateConfigFile(configFilePath)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+
+	err = helpers.LoadConfig(configFilePath, &cfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -117,34 +135,217 @@ func main() {
 				Name:  "config",
 				Usage: "View or modify the Terracreds configuration file",
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "hostname",
-						Aliases: []string{"n"},
-						Value:   "place_holder",
-						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object",
+					&cli.BoolFlag{
+						Name:     "use-local-vault",
+						Usage:    "WARNING: Resets configuration to only use the local operating system's credential vault. This will delete all configuration values for cloud provider vaults from the config file",
+						Required: false,
 					},
-					&cli.StringFlag{
-						Name:    "apiToken",
-						Aliases: []string{"t"},
-						Value:   "",
-						Usage:   "The Terraform Cloud/Enterprise API authorization token or other secret value to be securely stored in your vault provider of choice",
+				},
+				Subcommands: []*cli.Command{
+					{
+						Name:  "aws",
+						Usage: "AWS Secret Managers provider configuration settings",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:     "description",
+								Usage:    "A description to provide to the secret",
+								Required: false,
+							},
+							&cli.StringFlag{
+								Name:     "region",
+								Usage:    "The region where AWS Secrets Manager is hosted",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "secret-name",
+								Usage:    "The friendly name of the secret stored in AWS Secrets Manager. If omitted Terracreds will use the hostname value instead",
+								Required: true,
+							},
+						},
+						Action: func(c *cli.Context) error {
+							cfg.Aws.Description = c.String("description")
+							cfg.Aws.Region = c.String("region")
+							cfg.Aws.SecretName = c.String("secret-name")
+
+							// Set all other config values to empty
+							cfg.Azure.SecretName = ""
+							cfg.Azure.UseMSI = false
+							cfg.Azure.VaultUri = ""
+
+							cfg.HashiVault.EnvironmentTokenName = ""
+							cfg.HashiVault.KeyVaultPath = ""
+							cfg.HashiVault.SecretName = ""
+							cfg.HashiVault.SecretPath = ""
+							cfg.HashiVault.VaultUri = ""
+
+							err := helpers.WriteConfig(configFilePath, &cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							return nil
+						},
+					},
+					{
+						Name:  "azure",
+						Usage: "Azure Key Vault provider configuration settings",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:     "secret-name",
+								Usage:    "The name of the secret stored in Azure Key Vault. If omitted Terracreds will use the hostname value instead",
+								Required: false,
+							},
+							&cli.BoolFlag{
+								Name:     "use-msi",
+								Usage:    "A flag to indicate if the Managed Identity of the Azure VM should be used for authentication",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "vault-uri",
+								Usage:    "The FQDN of the Azure Key Vault resource",
+								Required: true,
+							},
+						},
+						Action: func(c *cli.Context) error {
+							cfg.Azure.SecretName = c.String("secret-name")
+							cfg.Azure.UseMSI = c.Bool("use-msi")
+							cfg.Azure.VaultUri = c.String("vault-uri")
+
+							// Set all other config values to empty
+							cfg.Aws.Description = ""
+							cfg.Aws.Region = ""
+							cfg.Aws.SecretName = ""
+
+							cfg.HashiVault.EnvironmentTokenName = ""
+							cfg.HashiVault.KeyVaultPath = ""
+							cfg.HashiVault.SecretName = ""
+							cfg.HashiVault.SecretPath = ""
+							cfg.HashiVault.VaultUri = ""
+
+							err := helpers.WriteConfig(configFilePath, &cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							return nil
+						},
+					},
+					{
+						Name:  "hashicorp",
+						Usage: "HashiCorp Vault provider configuration settings",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:     "environment-token-name",
+								Usage:    "The name of the environment variable that currently holds the Vault token",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "key-vault-path",
+								Usage:    "The name of the Key Vault store inside of Vault",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "secret-name",
+								Usage:    "The name of the secret stored inside of Vault. If omitted Terracreds will use the hostname value instead",
+								Required: false,
+							},
+							&cli.StringFlag{
+								Name:     "secret-path",
+								Usage:    "The path of the secret itself inside of the vault",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "vault-uri",
+								Usage:    "The URL of the Vault instance including its port",
+								Required: true,
+							},
+						},
+						Action: func(c *cli.Context) error {
+							cfg.HashiVault.EnvironmentTokenName = c.String("environment-token-name")
+							cfg.HashiVault.KeyVaultPath = c.String("key-vault-path")
+							cfg.HashiVault.SecretName = c.String("secret-name")
+							cfg.HashiVault.SecretPath = c.String("secret-path")
+							cfg.HashiVault.VaultUri = c.String("vault-uri")
+
+							// Set all other config values to empty
+							cfg.Aws.Description = ""
+							cfg.Aws.Region = ""
+							cfg.Aws.SecretName = ""
+
+							cfg.Azure.SecretName = ""
+							cfg.Azure.UseMSI = false
+							cfg.Azure.VaultUri = ""
+
+							err := helpers.WriteConfig(configFilePath, &cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							return nil
+						},
+					},
+					{
+						Name:  "logging",
+						Usage: "Configure the Terracreds logging settings",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:     "enable",
+								Usage:    "Enable logging",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "path",
+								Aliases:  []string{"p"},
+								Usage:    "The path on the file system where the log file is stored",
+								Required: true,
+							},
+						},
+						Action: func(c *cli.Context) error {
+							cfg.Logging.Enabled = c.Bool("enable")
+							cfg.Logging.Path = c.String("path")
+
+							err := helpers.WriteConfig(configFilePath, &cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							return nil
+						},
+					},
+					{
+						Name:  "view",
+						Usage: "Print the current configuration to the screen",
+						Action: func(c *cli.Context) error {
+							bytes, err := yaml.Marshal(&cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							print(string(bytes))
+							return nil
+						},
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if len(os.Args) == 2 {
-						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
-						return nil
-					}
+					if c.Bool("use-local-vault") == true {
+						cfg.Aws.Description = ""
+						cfg.Aws.Region = ""
+						cfg.Aws.SecretName = ""
 
-					terraVault := NewTerraVault(&cfg, c.String("hostname"))
-					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
+						cfg.Azure.SecretName = ""
+						cfg.Azure.UseMSI = false
+						cfg.Azure.VaultUri = ""
 
-					user, err := user.Current()
-					helpers.CheckError(err)
+						cfg.HashiVault.EnvironmentTokenName = ""
+						cfg.HashiVault.KeyVaultPath = ""
+						cfg.HashiVault.SecretName = ""
+						cfg.HashiVault.SecretPath = ""
+						cfg.HashiVault.VaultUri = ""
 
-					err = terraCreds.Create(cfg, hostname, c.String("apiToken"), user, terraVault)
-					if err != nil {
-						helpers.CheckError(err)
+						err := helpers.WriteConfig(configFilePath, &cfg)
+						if err != nil {
+							helpers.CheckError(err)
+						}
 					}
 
 					return nil
@@ -155,31 +356,31 @@ func main() {
 				Usage: "Manually create or update a credential object in the vault provider of your choice that contains the Terraform Cloud/Enterprise authorization token or another secret",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:    "hostname",
+						Name:    "name",
 						Aliases: []string{"n"},
 						Value:   "place_holder",
 						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object",
 					},
 					&cli.StringFlag{
-						Name:    "apiToken",
-						Aliases: []string{"t"},
+						Name:    "secret",
+						Aliases: []string{"s"},
 						Value:   "",
 						Usage:   "The Terraform Cloud/Enterprise API authorization token or other secret value to be securely stored in your vault provider of choice",
 					},
 				},
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
-						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
+						fmt.Fprintf(color.Output, "%s: No secret name or secret was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
 						return nil
 					}
 
-					terraVault := NewTerraVault(&cfg, c.String("hostname"))
-					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
+					terraVault := NewTerraVault(&cfg, c.String("name"))
+					name := helpers.GetSecretName(&cfg, c.String("name"))
 
 					user, err := user.Current()
 					helpers.CheckError(err)
 
-					err = terraCreds.Create(cfg, hostname, c.String("apiToken"), user, terraVault)
+					err = terraCreds.Create(cfg, name, c.String("secret"), user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -192,7 +393,7 @@ func main() {
 				Usage: "Delete a stored credential in the vault provider of your choice",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:    "hostname",
+						Name:    "name",
 						Aliases: []string{"n"},
 						Value:   "place_holder",
 						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object.",
@@ -200,25 +401,25 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
-						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
+						fmt.Fprintf(color.Output, "%s: No secret name was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
 						return nil
 					}
 
-					if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--hostname") {
-						msg := fmt.Sprintf("A hostname was not expected here: '%s'", os.Args[2])
+					if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--name") {
+						msg := fmt.Sprintf("A secret name was not expected here: '%s'", os.Args[2])
 						helpers.Logging(cfg, msg, "WARNING")
-						fmt.Fprintf(color.Output, "%s: %s Did you mean `terracreds delete --hostname/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
+						fmt.Fprintf(color.Output, "%s: %s Did you mean `terracreds delete --name/-n %s'?\n", color.YellowString("WARNING"), msg, os.Args[2])
 						return nil
 					}
 
-					terraVault := NewTerraVault(&cfg, c.String("hostname"))
-					hostname := helpers.GetSecretName(&cfg, c.String("hostname"))
+					terraVault := NewTerraVault(&cfg, c.String("name"))
+					name := helpers.GetSecretName(&cfg, c.String("name"))
 					method := os.Args[1]
 
 					user, err := user.Current()
 					helpers.CheckError(err)
 
-					err = terraCreds.Delete(cfg, method, hostname, user, terraVault)
+					err = terraCreds.Delete(cfg, method, name, user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -231,18 +432,18 @@ func main() {
 				Usage: "(Terraform Only) Forget a stored credential in your vault provider of choice when 'terraform logout' has been called",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
-						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds forget -h' for help info\n", color.RedString("ERROR"))
+						fmt.Fprintf(color.Output, "%s: No secret name was specified. Use 'terracreds forget -h' for help info\n", color.RedString("ERROR"))
 						return nil
 					}
 
 					terraVault := NewTerraVault(&cfg, os.Args[2])
-					hostname := helpers.GetSecretName(&cfg, os.Args[2])
+					name := helpers.GetSecretName(&cfg, os.Args[2])
 					method := os.Args[1]
 
 					user, err := user.Current()
 					helpers.CheckError(err)
 
-					err = terraCreds.Delete(cfg, method, hostname, user, terraVault)
+					err = terraCreds.Delete(cfg, method, name, user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}
@@ -261,7 +462,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					helpers.GenerateTerraCreds(c)
+					helpers.GenerateTerraCreds(c, version)
 					return nil
 				},
 			},
@@ -274,9 +475,9 @@ func main() {
 						helpers.CheckError(err)
 
 						terraVault := NewTerraVault(&cfg, os.Args[2])
-						hostname := helpers.GetSecretName(&cfg, os.Args[2])
+						name := helpers.GetSecretName(&cfg, os.Args[2])
 
-						token, err := terraCreds.Get(cfg, hostname, user, terraVault)
+						token, err := terraCreds.Get(cfg, name, user, terraVault)
 						if err != nil {
 							helpers.CheckError(err)
 						}
@@ -285,7 +486,7 @@ func main() {
 						return nil
 					}
 
-					msg := "A hostname was expected after the 'get' command but no argument was provided"
+					msg := "A secret name was expected after the 'get' command but no argument was provided"
 					helpers.Logging(cfg, msg, "ERROR")
 					fmt.Fprintf(color.Output, "%s: %s\n", color.RedString("ERROR"), msg)
 					return nil
@@ -305,7 +506,7 @@ func main() {
 						Name:    "input-file",
 						Aliases: []string{"f"},
 						Value:   "",
-						Usage:   "The path to the file that provides the list of secrets to be retrieved",
+						Usage:   "The path to the file that provides the list of secrets to be retrieved. Each secret name should be on its own line",
 					},
 					&cli.BoolFlag{
 						Name:  "export-as-tfvars",
@@ -336,7 +537,7 @@ func main() {
 						return nil
 					}
 
-					msg := "A hostname was expected after the 'get' command but no argument was provided"
+					msg := "A hostname or secret name was expected after the 'get' command but no argument was provided"
 					helpers.Logging(cfg, msg, "ERROR")
 					fmt.Fprintf(color.Output, "%s: %s\n", color.RedString("ERROR"), msg)
 					return nil
@@ -347,17 +548,17 @@ func main() {
 				Usage: "(Terraform Only) Store or update a credential object in your vault provider of choice when 'terraform login' has been called",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
-						fmt.Fprintf(color.Output, "%s: No hostname or token was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
+						fmt.Fprintf(color.Output, "%s: No hostname or secret name was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
 						return nil
 					}
 
 					terraVault := NewTerraVault(&cfg, os.Args[2])
-					hostname := helpers.GetSecretName(&cfg, os.Args[2])
+					name := helpers.GetSecretName(&cfg, os.Args[2])
 
 					user, err := user.Current()
 					helpers.CheckError(err)
 
-					err = terraCreds.Create(cfg, hostname, nil, user, terraVault)
+					err = terraCreds.Create(cfg, name, nil, user, terraVault)
 					if err != nil {
 						helpers.CheckError(err)
 					}

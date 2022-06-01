@@ -172,5 +172,21 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 }
 
 func (m *Mac) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
-	return nil, nil
+	var secretValues []string
+
+	for _, secret := range secretNames {
+		cred, err := keyring.Get(secret, string(user.Username))
+		if err == nil {
+			value := string(cred)
+
+			if c.Bool("export-as-tfvars") {
+				fmt.Printf("TF_VAR_%s=%s\n", secret, value)
+				continue
+			}
+
+			secretValues = append(secretValues, value)
+		}
+	}
+
+	return secretValues, nil
 }
