@@ -536,7 +536,7 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:     "secret-names",
-						Aliases:  []string{"s"},
+						Aliases:  []string{"s", "l"},
 						Value:    "",
 						Usage:    "A comma separated list of secret names to be retrieved",
 						Required: false,
