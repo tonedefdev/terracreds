@@ -130,7 +130,7 @@ func main() {
 	app := &cli.App{
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Automation and Collaboration Software (TACOS) that leverages your vault provider of choice for securely storing API tokens or other secrets.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
-		UsageText: "Store Terraform API tokens by running 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -s myAPItoken'",
+		UsageText: "Store Terraform Automation and Collaboration Software API tokens by running 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -s myAPItoken'",
 		Version:   version,
 		Commands: []*cli.Command{
 			{
@@ -389,8 +389,9 @@ func main() {
 				},
 			},
 			{
-				Name:  "create",
-				Usage: "Manually create or update a credential object in the vault provider of your choice that contains either the Terraform Automation and Collaboration Software API's authorization token or another secret",
+				Name:    "create",
+				Aliases: []string{"update"},
+				Usage:   "Manually create or update a credential object in the vault provider of your choice that contains either the Terraform Automation and Collaboration Software API's authorization token or another secret",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "name",
