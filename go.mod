@@ -20,7 +20,7 @@ require (
 	cloud.google.com/go v0.100.2 // indirect
 	cloud.google.com/go/compute v1.5.0 // indirect
 	cloud.google.com/go/iam v0.3.0 // indirect
-	cloud.google.com/go/secretmanager v1.4.0 // indirect
+	cloud.google.com/go/secretmanager v1.4.0
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.17 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.9.11 // indirect
@@ -65,7 +65,7 @@ require (
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
 	google.golang.org/api v0.74.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220602131408-e326c6e8e9c8 // indirect
+	google.golang.org/genproto v0.0.0-20220602131408-e326c6e8e9c8
 	google.golang.org/grpc v1.46.2 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect

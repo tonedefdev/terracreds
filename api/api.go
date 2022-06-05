@@ -26,12 +26,12 @@ type Azure struct {
 	VaultUri string `yaml:"vaultUri,omitempty"`
 }
 
-// GCP is the configuration structure for the Goocle Cloud Secrets Manager provider
+// GCP is the configuration structure for the Goocle Cloud Secret Manager provider
 type GCP struct {
-	// ProjectId (Required) The name of the GCP project where the Secrets Manager instance has been created
+	// ProjectId (Required) The name of the GCP project where the Secret Manager API has been enabled
 	ProjectId string `yaml:"projectId,omitempty"`
 
-	// SecretId (Required) The name of the secret to create
+	// SecretId (Optional) The name of the secret to create
 	SecretId string `yaml:"secretId,omitempty"`
 }
 

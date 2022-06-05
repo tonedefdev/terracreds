@@ -174,7 +174,8 @@ func main() {
 							&cli.StringFlag{
 								Name:     "secret-name",
 								Usage:    "The friendly name of the secret stored in AWS Secrets Manager. If omitted Terracreds will use the hostname value instead",
-								Required: true,
+								Value:    "",
+								Required: false,
 							},
 						},
 						Action: func(c *cli.Context) error {
@@ -186,6 +187,9 @@ func main() {
 							cfg.Azure.SecretName = ""
 							cfg.Azure.UseMSI = false
 							cfg.Azure.VaultUri = ""
+
+							cfg.GCP.ProjectId = ""
+							cfg.GCP.SecretId = ""
 
 							cfg.HashiVault.EnvironmentTokenName = ""
 							cfg.HashiVault.KeyVaultPath = ""
@@ -208,6 +212,7 @@ func main() {
 							&cli.StringFlag{
 								Name:     "secret-name",
 								Usage:    "The name of the secret stored in Azure Key Vault. If omitted Terracreds will use the hostname value instead",
+								Value:    "",
 								Required: false,
 							},
 							&cli.BoolFlag{
@@ -227,6 +232,52 @@ func main() {
 							cfg.Azure.VaultUri = c.String("vault-uri")
 
 							// Set all other config values to empty
+							cfg.Aws.Description = ""
+							cfg.Aws.Region = ""
+							cfg.Aws.SecretName = ""
+
+							cfg.GCP.ProjectId = ""
+							cfg.GCP.SecretId = ""
+
+							cfg.HashiVault.EnvironmentTokenName = ""
+							cfg.HashiVault.KeyVaultPath = ""
+							cfg.HashiVault.SecretName = ""
+							cfg.HashiVault.SecretPath = ""
+							cfg.HashiVault.VaultUri = ""
+
+							err := helpers.WriteConfig(configFilePath, &cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							return nil
+						},
+					},
+					{
+						Name:  "gcp",
+						Usage: "Google Cloud Provider Secret Managers configuration settings",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:     "project-id",
+								Usage:    "The name of the GCP project where the Secrets Manager has been created",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "secret-id",
+								Usage:    "The name of the secret identifier in GCP Secret Manager. If omitted Terracreds will use the hostname value instead",
+								Value:    "",
+								Required: false,
+							},
+						},
+						Action: func(c *cli.Context) error {
+							cfg.GCP.ProjectId = c.String("project-id")
+							cfg.GCP.SecretId = c.String("secret-id")
+
+							// Set all other config values to empty
+							cfg.Azure.SecretName = ""
+							cfg.Azure.UseMSI = false
+							cfg.Azure.VaultUri = ""
+
 							cfg.Aws.Description = ""
 							cfg.Aws.Region = ""
 							cfg.Aws.SecretName = ""
@@ -262,6 +313,7 @@ func main() {
 							&cli.StringFlag{
 								Name:     "secret-name",
 								Usage:    "The name of the secret stored inside of Vault. If omitted Terracreds will use the hostname value instead",
+								Value:    "",
 								Required: false,
 							},
 							&cli.StringFlag{
@@ -290,6 +342,9 @@ func main() {
 							cfg.Azure.SecretName = ""
 							cfg.Azure.UseMSI = false
 							cfg.Azure.VaultUri = ""
+
+							cfg.GCP.ProjectId = ""
+							cfg.GCP.SecretId = ""
 
 							err := helpers.WriteConfig(configFilePath, &cfg)
 							if err != nil {
@@ -384,6 +439,9 @@ func main() {
 							cfg.Azure.SecretName = ""
 							cfg.Azure.UseMSI = false
 							cfg.Azure.VaultUri = ""
+
+							cfg.GCP.ProjectId = ""
+							cfg.GCP.SecretId = ""
 
 							cfg.HashiVault.EnvironmentTokenName = ""
 							cfg.HashiVault.KeyVaultPath = ""
@@ -586,7 +644,7 @@ func main() {
 						}
 
 						if len(cfg.Secrets) < 1 && c.String("secret-names") == "" {
-							verbiage := "A list of secrets must be provided. Use '--secret-names' and pass it a comma separated list of secrets, or setup the 'secrets' block in the terracreds config file to use this command"
+							verbiage := "A list of secrets must be provided. Use '--secret-names' and pass it a comma separated list of secrets, or setup the 'secrets' block in the terracreds config file to use this command\n"
 							fmt.Fprintf(color.Output, "%s: %s", color.RedString("ERROR"), verbiage)
 							return nil
 						}

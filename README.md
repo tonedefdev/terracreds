@@ -15,7 +15,7 @@ We all know storing secrets in plain text can pose major security threats, and T
 #### Currently supported Vault providers:
 - [x] AWS Secrets Manager
 - [x] Azure Key Vault
-- [ ] Google Secret Manager 
+- [x] Google Secret Manager 
 - [x] HashiCorp Vault
 
 ## Windows Install via Chocolatey
@@ -165,6 +165,8 @@ If the token was updated successfully the following message is returned:
 Success! Terraform has obtained and saved an API token.
 ```
 
+You can also run `terracreds update -n my-secret -v my-secret-value` to update a secret value.
+
 Additionally, you can check the `terracreds.log` if logging is enabled for more information
 
 ## Forgetting Credentials
@@ -184,6 +186,17 @@ Success! Terraform has removed the stored API token for app.terraform.io.
 ```
 
 Additionally, you can check the `terracreds.log` if logging is enabled for more information
+
+## List Credentials
+> New in version `2.1.0`
+
+You can pass in a comma separated list of secrets via `terracreds list -l mysecret,mysecret2` to print out the secret values to the screen.
+
+You can also setup a list of secrets in the configuration file by using `terracreds config secrets -l mysecret,mysecret2` and then calling `terracreds list --from-config` to print out the secrets.
+
+There's a helper flag `terracreds list --as-tfvars` which will return the secret values formatted for use with `terraform`. Depending on the shell calling this command will determine how you can readily use these values.
+
+For instance on Linux/macOS you can simply call `eval` to evaluate the output and use those as variables in your current shell.
 
 ## Setting Up a Vault Provider
 > You can reference example configs in our [repo](https://github.com/tonedefdev/terracreds/blob/main/config.yaml) plus we have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation
@@ -241,6 +254,22 @@ secret_permissions = [
 ]
 ```
 > Since `Azure Key Vault` doesn't support the period character in a secret name a helper function will replace any periods with dashes so they can be successfully stored. This means a `terraform` API token name that would usually be `app.terraform.io` will become `app-terraform-io`
+
+### Google Secret Manager
+In to leverage `terracreds` to manage secrets in `Google Secret Manager` the following block needs to be provided in the configuration file:
+```yaml
+gcp:
+  projectId: my-gcp-project
+  secretId: my-secret-id
+```
+
+The `Google IAM` role `secretmanager.admin` is suggested in order to fully manage the secrets with `terracreds`
+
+| Value | Description | Required |
+| ----- | ----------- | -------- |
+| `projectId` | The name of the `GCP` project ID where the `Secret Manager` API has been enabled | `yes` |
+| `secretId` | The name of the secret ID | `no` |
+
 
 ### HashiCorp Vault
 In order to leverage `terracreds` to manage secrets in `HashiCorp Vault` the following block needs to be provided in the configuration file:

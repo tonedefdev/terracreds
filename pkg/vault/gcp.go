@@ -24,7 +24,6 @@ func (gcp *GCPSecretsManager) getClient() *secretmanager.Client {
 	if err != nil {
 		helpers.CheckError(err)
 	}
-	defer client.Close()
 	return client
 }
 
@@ -37,7 +36,30 @@ func formatGcpSecretName(secretName string) string {
 
 func (gcp *GCPSecretsManager) Create(secretValue string, method string) error {
 	client := gcp.getClient()
+	defer client.Close()
+
 	secretId := formatGcpSecretName(gcp.SecretId)
+	accessRequest := &secretmanagerpb.GetSecretRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s", gcp.ProjectId, secretId),
+	}
+
+	get, err := client.GetSecret(ctx, accessRequest)
+	if err == nil {
+		payload := []byte(secretValue)
+		addSecretVersionReq := &secretmanagerpb.AddSecretVersionRequest{
+			Parent: get.Name,
+			Payload: &secretmanagerpb.SecretPayload{
+				Data: payload,
+			},
+		}
+
+		_, err = client.AddSecretVersion(ctx, addSecretVersionReq)
+		if err != nil {
+			return err
+		}
+
+		return err
+	}
 
 	createSecretReq := &secretmanagerpb.CreateSecretRequest{
 		Parent:   fmt.Sprintf("projects/%s", gcp.ProjectId),
@@ -65,8 +87,6 @@ func (gcp *GCPSecretsManager) Create(secretValue string, method string) error {
 		},
 	}
 
-	print(secret.Name)
-
 	_, err = client.AddSecretVersion(ctx, addSecretVersionReq)
 	if err != nil {
 		return err
@@ -77,13 +97,24 @@ func (gcp *GCPSecretsManager) Create(secretValue string, method string) error {
 
 func (gcp *GCPSecretsManager) Delete() error {
 	client := gcp.getClient()
+	defer client.Close()
+
 	secretId := formatGcpSecretName(gcp.SecretId)
 
-	destroySecretVersionReq := secretmanagerpb.DestroySecretVersionRequest{
-		Name: fmt.Sprintf("/projects/%s/secrets/%s/versions/latest", gcp.ProjectId, secretId),
+	accessRequest := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", gcp.ProjectId, secretId),
 	}
 
-	_, err := client.DestroySecretVersion(ctx, &destroySecretVersionReq)
+	result, err := client.AccessSecretVersion(ctx, accessRequest)
+	if err != nil {
+		return err
+	}
+
+	destroySecretVersionReq := secretmanagerpb.DestroySecretVersionRequest{
+		Name: result.Name,
+	}
+
+	_, err = client.DestroySecretVersion(ctx, &destroySecretVersionReq)
 	if err != nil {
 		return err
 	}
@@ -93,10 +124,11 @@ func (gcp *GCPSecretsManager) Delete() error {
 
 func (gcp *GCPSecretsManager) Get() ([]byte, error) {
 	client := gcp.getClient()
-	secretId := formatGcpSecretName(gcp.SecretId)
+	defer client.Close()
 
+	secretId := formatGcpSecretName(gcp.SecretId)
 	accessRequest := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: fmt.Sprintf("/projects/%s/secrets/%s/versions/latest", gcp.ProjectId, secretId),
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", gcp.ProjectId, secretId),
 	}
 
 	result, err := client.AccessSecretVersion(ctx, accessRequest)
@@ -108,5 +140,23 @@ func (gcp *GCPSecretsManager) Get() ([]byte, error) {
 }
 
 func (gcp *GCPSecretsManager) List(secretNames []string) ([]string, error) {
-	return nil, nil
+	var secretValues []string
+	client := gcp.getClient()
+	defer client.Close()
+
+	for _, secret := range secretNames {
+		secretId := formatGcpSecretName(secret)
+		accessRequest := &secretmanagerpb.AccessSecretVersionRequest{
+			Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", gcp.ProjectId, secretId),
+		}
+
+		result, err := client.AccessSecretVersion(ctx, accessRequest)
+		if err != nil {
+			return nil, err
+		}
+
+		secretValues = append(secretValues, string(result.Payload.Data))
+	}
+
+	return secretValues, nil
 }
