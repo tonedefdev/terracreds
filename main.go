@@ -81,6 +81,19 @@ func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 		return vault
 	}
 
+	if cfg.GCP.ProjectId != "" {
+		vault := &vault.GCPSecretsManager{
+			ProjectId: cfg.GCP.ProjectId,
+			SecretId:  hostname,
+		}
+
+		if cfg.GCP.SecretId != "" {
+			vault.SecretId = cfg.GCP.SecretId
+		}
+
+		return vault
+	}
+
 	if cfg.HashiVault.VaultUri != "" {
 		vault := &vault.HashiVault{
 			EnvTokenName: cfg.HashiVault.EnvironmentTokenName,

@@ -26,6 +26,15 @@ type Azure struct {
 	VaultUri string `yaml:"vaultUri,omitempty"`
 }
 
+// GCP is the configuration structure for the Goocle Cloud Secrets Manager provider
+type GCP struct {
+	// ProjectId (Required) The name of the GCP project where the Secrets Manager instance has been created
+	ProjectId string `yaml:"projectId,omitempty"`
+
+	// SecretId (Required) The name of the secret to create
+	SecretId string `yaml:"secretId,omitempty"`
+}
+
 // HCVault is the configuration structure for the Hashicorp Vault provider
 type HCVault struct {
 	// EnvironmentTokenName (Required) The name of the environment variable that currently holds
@@ -52,6 +61,7 @@ type Config struct {
 	Aws        Aws      `yaml:"aws,omitempty"`
 	Azure      Azure    `yaml:"azure,omitempty"`
 	HashiVault HCVault  `yaml:"hcvault,omitempty"`
+	GCP        GCP      `yaml:"gcp,omitempty"`
 	Secrets    []string `yaml:"secrets,omitempty"`
 }
 
