@@ -19,3 +19,4 @@ terraform/.terraform.tfstate.lock.info
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terracreds
+terracreds.json
