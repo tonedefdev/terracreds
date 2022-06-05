@@ -11,6 +11,7 @@ import (
 )
 
 type AzureKeyVault struct {
+	SecretList []string
 	SecretName string
 	UseMSI     bool
 	VaultUri   string
@@ -75,5 +76,19 @@ func (akv *AzureKeyVault) Get() ([]byte, error) {
 }
 
 func (akv *AzureKeyVault) List(secretNames []string) ([]string, error) {
-	return nil, nil
+	var secretValues []string
+	ctx := context.Background()
+	client := getVaultClientMSI()
+
+	for _, secret := range secretNames {
+		get, err := client.GetSecret(ctx, akv.VaultUri, secret, "")
+
+		if err != nil {
+			return nil, err
+		}
+
+		secretValues = append(secretValues, *get.Value)
+	}
+
+	return secretValues, nil
 }

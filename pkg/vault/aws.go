@@ -183,5 +183,41 @@ func (asm *AwsSecretsManager) Get() ([]byte, error) {
 }
 
 func (asm *AwsSecretsManager) List(secretNames []string) ([]string, error) {
-	return nil, nil
+	var secretValues []string
+	svc := asm.getAwsSecetsManager()
+
+	for _, secret := range secretNames {
+		input := &secretsmanager.GetSecretValueInput{
+			SecretId: aws.String(secret),
+		}
+
+		result, err := svc.GetSecretValue(input)
+		if err != nil {
+			if aerr, ok := err.(awserr.Error); ok {
+				switch aerr.Code() {
+				case secretsmanager.ErrCodeResourceNotFoundException:
+					return nil, err
+				case secretsmanager.ErrCodeInvalidParameterException:
+					fmt.Println(secretsmanager.ErrCodeInvalidParameterException, aerr.Error())
+				case secretsmanager.ErrCodeInvalidRequestException:
+					fmt.Println(secretsmanager.ErrCodeInvalidRequestException, aerr.Error())
+				case secretsmanager.ErrCodeDecryptionFailure:
+					fmt.Println(secretsmanager.ErrCodeDecryptionFailure, aerr.Error())
+				case secretsmanager.ErrCodeInternalServiceError:
+					fmt.Println(secretsmanager.ErrCodeInternalServiceError, aerr.Error())
+				default:
+					fmt.Println(aerr.Error())
+				}
+			} else {
+				// Print the error, cast err to awserr.Error to get the Code and
+				// Message from an error.
+				fmt.Println(err.Error())
+			}
+			return nil, err
+		}
+
+		secretValues = append(secretValues, *result.SecretString)
+	}
+
+	return secretValues, nil
 }

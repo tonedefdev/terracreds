@@ -20,6 +20,7 @@ import (
 var (
 	cfg            api.Config
 	configFilePath string
+	confirm        string
 )
 
 // TerraCreds interface implements these methods for a credential's lifecycle
@@ -136,7 +137,7 @@ func main() {
 				Usage: "View or modify the Terracreds configuration file",
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
-						Name:     "use-local-vault",
+						Name:     "use-local-vault-only",
 						Usage:    "WARNING: Resets configuration to only use the local operating system's credential vault. This will delete all configuration values for cloud provider vaults from the config file",
 						Required: false,
 					},
@@ -327,24 +328,31 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					if c.Bool("use-local-vault") == true {
-						cfg.Aws.Description = ""
-						cfg.Aws.Region = ""
-						cfg.Aws.SecretName = ""
+					if c.Bool("use-local-vault-only") == true {
+						const verbiage = "This will reset the configuration to only use the local operating system's credential vault. Any configuration values for a cloud provider vault will be permanently lost!"
+						fmt.Fprintf(color.Output, "%s: %s\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: ", color.YellowString("WARNING"), verbiage)
+						fmt.Scanln(&confirm)
+						fmt.Print("\n")
 
-						cfg.Azure.SecretName = ""
-						cfg.Azure.UseMSI = false
-						cfg.Azure.VaultUri = ""
+						if confirm == "yes" {
+							cfg.Aws.Description = ""
+							cfg.Aws.Region = ""
+							cfg.Aws.SecretName = ""
 
-						cfg.HashiVault.EnvironmentTokenName = ""
-						cfg.HashiVault.KeyVaultPath = ""
-						cfg.HashiVault.SecretName = ""
-						cfg.HashiVault.SecretPath = ""
-						cfg.HashiVault.VaultUri = ""
+							cfg.Azure.SecretName = ""
+							cfg.Azure.UseMSI = false
+							cfg.Azure.VaultUri = ""
 
-						err := helpers.WriteConfig(configFilePath, &cfg)
-						if err != nil {
-							helpers.CheckError(err)
+							cfg.HashiVault.EnvironmentTokenName = ""
+							cfg.HashiVault.KeyVaultPath = ""
+							cfg.HashiVault.SecretName = ""
+							cfg.HashiVault.SecretPath = ""
+							cfg.HashiVault.VaultUri = ""
+
+							err := helpers.WriteConfig(configFilePath, &cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
 						}
 					}
 
@@ -462,7 +470,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					helpers.GenerateTerraCreds(c, version)
+					helpers.GenerateTerraCreds(c, version, confirm)
 					return nil
 				},
 			},
@@ -509,7 +517,7 @@ func main() {
 						Usage:   "The path to the file that provides the list of secrets to be retrieved. Each secret name should be on its own line",
 					},
 					&cli.BoolFlag{
-						Name:  "export-as-tfvars",
+						Name:  "as-tfvars",
 						Value: false,
 						Usage: "Exports the secret keys and values as 'TF_VARS_secret_key=secret_value' for the given operating system",
 					},

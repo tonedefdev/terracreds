@@ -1,4 +1,3 @@
-### Example Config File
 logging:
   enabled: true
   path: C:/temp/

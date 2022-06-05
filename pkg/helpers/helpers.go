@@ -193,7 +193,7 @@ func LogLevel(level string) string {
 
 // GenerateTerracreds creates the binary to use this package as a credential helper
 // and optionally the terraform.rc file
-func GenerateTerraCreds(c *cli.Context, version string) {
+func GenerateTerraCreds(c *cli.Context, version string, confirm string) {
 	var cliConfig string
 	var tfPlugins string
 	var binary string
@@ -215,11 +215,18 @@ func GenerateTerraCreds(c *cli.Context, version string) {
 	NewDirectory(tfPlugins)
 	CopyTerraCreds(binary)
 	if c.Bool("create-cli-config") == true {
-		doc := heredoc.Doc(`
-		credentials_helper "terracreds" {
-			args = []
-		}`)
-		WriteToFile(cliConfig, doc)
+		const verbiage = "This command will delete any settings in your .terraformrc file\n\n    Enter 'yes' to coninue or press 'enter' or 'return' to cancel: "
+		fmt.Fprintf(color.Output, "%s: %s", color.YellowString("WARNING"), verbiage)
+		fmt.Scanln(&confirm)
+		fmt.Print("\n")
+
+		if confirm == "yes" {
+			doc := heredoc.Doc(`
+			credentials_helper "terracreds" {
+				args = []
+			}`)
+			WriteToFile(cliConfig, doc)
+		}
 	}
 }
 

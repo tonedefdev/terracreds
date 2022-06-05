@@ -170,6 +170,15 @@ func (l *Linux) Get(cfg api.Config, hostname string, user *user.User, vault vaul
 func (l *Linux) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
 	var secretValues []string
 
+	if vault != nil {
+		secrets, err := vault.List(secretNames)
+		if err != nil {
+			return nil, err
+		}
+
+		return secrets, nil
+	}
+
 	for _, secret := range secretNames {
 		cred, err := keyring.Get(secret, string(user.Username))
 		if err == nil {

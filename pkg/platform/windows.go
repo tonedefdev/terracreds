@@ -178,12 +178,21 @@ func (w *Windows) Get(cfg api.Config, hostname string, user *user.User, vault va
 func (w *Windows) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
 	var secretValues []string
 
+	if vault != nil {
+		secrets, err := vault.List(secretNames)
+		if err != nil {
+			return nil, err
+		}
+
+		return secrets, nil
+	}
+
 	for _, secret := range secretNames {
 		cred, err := wincred.GetGenericCredential(secret)
 		if err == nil && cred.UserName == user.Username {
 			value := string(cred.CredentialBlob)
 
-			if c.Bool("export-as-tfvars") {
+			if c.Bool("as-tfvars") {
 				fmt.Printf("TF_VAR_%s=%s\n", secret, value)
 				continue
 			}
