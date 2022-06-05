@@ -21,6 +21,7 @@ var (
 	cfg            api.Config
 	configFilePath string
 	confirm        string
+	secretNames    []string
 )
 
 // TerraCreds interface implements these methods for a credential's lifecycle
@@ -128,8 +129,8 @@ func main() {
 
 	app := &cli.App{
 		Name:      "terracreds",
-		Usage:     "a credential helper for Terraform Cloud/Enterprise that leverages your vault provider of choice for securely storing your API tokens or other secrets.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
-		UsageText: "Directly store credentials from Terraform using 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -t myAPItoken'",
+		Usage:     "a credential helper for Terraform Automation and Collaboration Software (TACOS) that leverages your vault provider of choice for securely storing API tokens or other secrets.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
+		UsageText: "Store Terraform API tokens by running 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -s myAPItoken'",
 		Version:   version,
 		Commands: []*cli.Command{
 			{
@@ -138,7 +139,7 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:     "use-local-vault-only",
-						Usage:    "WARNING: Resets configuration to only use the local operating system's credential vault. This will delete all configuration values for cloud provider vaults from the config file",
+						Usage:    "Resets configuration to only use the local operating system's credential vault. This will delete all configuration values for cloud provider vaults from the config file",
 						Required: false,
 					},
 				},
@@ -290,20 +291,48 @@ func main() {
 						Usage: "Configure the Terracreds logging settings",
 						Flags: []cli.Flag{
 							&cli.BoolFlag{
-								Name:     "enable",
+								Name:     "enabled",
 								Usage:    "Enable logging",
-								Required: true,
+								Required: false,
 							},
 							&cli.StringFlag{
 								Name:     "path",
 								Aliases:  []string{"p"},
 								Usage:    "The path on the file system where the log file is stored",
+								Required: false,
+							},
+						},
+						Action: func(c *cli.Context) error {
+							if c.Bool("enabled") {
+								cfg.Logging.Enabled = c.Bool("enabled")
+							}
+
+							if c.String("path") != "" {
+								cfg.Logging.Path = c.String("path")
+							}
+
+							err := helpers.WriteConfig(configFilePath, &cfg)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							return nil
+						},
+					},
+					{
+						Name:  "secrets",
+						Usage: "Add a list of secret names to the configuration file",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:     "secret-list",
+								Aliases:  []string{"l"},
+								Usage:    "Add a comma separated list of secret names to be stored in the configuration file to use with the 'list' command",
 								Required: true,
 							},
 						},
 						Action: func(c *cli.Context) error {
-							cfg.Logging.Enabled = c.Bool("enable")
-							cfg.Logging.Path = c.String("path")
+							secretValues := strings.Split(c.String("secret-list"), ",")
+							cfg.Secrets = secretValues
 
 							err := helpers.WriteConfig(configFilePath, &cfg)
 							if err != nil {
@@ -361,19 +390,19 @@ func main() {
 			},
 			{
 				Name:  "create",
-				Usage: "Manually create or update a credential object in the vault provider of your choice that contains the Terraform Cloud/Enterprise authorization token or another secret",
+				Usage: "Manually create or update a credential object in the vault provider of your choice that contains either the Terraform Automation and Collaboration Software API's authorization token or another secret",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "name",
 						Aliases: []string{"n"},
 						Value:   "place_holder",
-						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object",
+						Usage:   "The name of the Terraform Automation and Collaboration Software server's hostname or the name of the secret. This is also the display name of the credential object",
 					},
 					&cli.StringFlag{
 						Name:    "secret",
-						Aliases: []string{"s"},
+						Aliases: []string{"s", "t", "v"},
 						Value:   "",
-						Usage:   "The Terraform Cloud/Enterprise API authorization token or other secret value to be securely stored in your vault provider of choice",
+						Usage:   "The Terraform Automation and Collaboration Software API authorization token or other secret value to be securely stored in your vault provider of choice",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -404,7 +433,7 @@ func main() {
 						Name:    "name",
 						Aliases: []string{"n"},
 						Value:   "place_holder",
-						Usage:   "The name of the Terraform Cloud/Enterprise server's hostname or the name of the secret. This is also the display name of the credential object.",
+						Usage:   "The name of the Terraform Automation and Collaboration Software server's hostname or the name of the secret. This is also the display name of the credential object",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -476,7 +505,7 @@ func main() {
 			},
 			{
 				Name:  "get",
-				Usage: "Get the credential object value by passing the hostname of the Terraform Cloud/Enterprise server as an argument or the name of the secret. The credential is returned as a JSON object and formatted for consumption by Terraform",
+				Usage: "Get the credential object value by passing the hostname of the Terraform Automation and Collaboration Software server's hostname or the name of the secret as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) > 2 {
 						user, err := user.Current()
@@ -505,27 +534,48 @@ func main() {
 				Usage: "List the credentials stored in a vault using a provided set of secret names",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:    "secret-names",
-						Aliases: []string{"s"},
-						Value:   "",
-						Usage:   "A comma separated list of secret names to be retrieved",
-					},
-					&cli.StringFlag{
-						Name:    "input-file",
-						Aliases: []string{"f"},
-						Value:   "",
-						Usage:   "The path to the file that provides the list of secrets to be retrieved. Each secret name should be on its own line",
+						Name:     "secret-names",
+						Aliases:  []string{"s"},
+						Value:    "",
+						Usage:    "A comma separated list of secret names to be retrieved",
+						Required: false,
 					},
 					&cli.BoolFlag{
-						Name:  "as-tfvars",
-						Value: false,
-						Usage: "Exports the secret keys and values as 'TF_VARS_secret_key=secret_value' for the given operating system",
+						Name:     "from-config",
+						Aliases:  []string{"f"},
+						Value:    false,
+						Usage:    "Get the secrets from the 'secrets' list in the configuration file",
+						Required: false,
+					},
+					&cli.BoolFlag{
+						Name:     "as-tfvars",
+						Value:    false,
+						Usage:    "Exports the secret keys and values as 'TF_VARS_secret_key=secret_value' for the given operating system",
+						Required: false,
 					},
 				},
 				Action: func(c *cli.Context) error {
+					if len(os.Args) == 2 {
+						fmt.Fprintf(color.Output, "%s: No list command was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
+						return nil
+					}
+
 					if len(os.Args) > 1 {
 						terraVault := NewTerraVault(&cfg, os.Args[2])
-						secretNames := strings.Split(c.String("secret-names"), ",")
+
+						if len(cfg.Secrets) > 0 {
+							secretNames = cfg.Secrets
+						}
+
+						if c.String("secret-names") != "" {
+							secretNames = strings.Split(c.String("secret-names"), ",")
+						}
+
+						if len(cfg.Secrets) < 1 && c.String("secret-names") == "" {
+							verbiage := "A list of secrets must be provided. Use '--secret-names' and pass it a comma separated list of secrets, or setup the 'secrets' block in the terracreds config file to use this command"
+							fmt.Fprintf(color.Output, "%s: %s", color.RedString("ERROR"), verbiage)
+							return nil
+						}
 
 						user, err := user.Current()
 						if err != nil {
@@ -545,18 +595,15 @@ func main() {
 						return nil
 					}
 
-					msg := "A hostname or secret name was expected after the 'get' command but no argument was provided"
-					helpers.Logging(cfg, msg, "ERROR")
-					fmt.Fprintf(color.Output, "%s: %s\n", color.RedString("ERROR"), msg)
 					return nil
 				},
 			},
 			{
 				Name:  "store",
-				Usage: "(Terraform Only) Store or update a credential object in your vault provider of choice when 'terraform login' has been called",
+				Usage: "(Terraform Only) Store or update a Terraform Automation and Collaboration Software API token in your vault provider of choice when 'terraform login' has been called",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
-						fmt.Fprintf(color.Output, "%s: No hostname or secret name was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
+						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
 						return nil
 					}
 

@@ -48,10 +48,11 @@ type HCVault struct {
 
 // Config struct for terracreds custom configuration
 type Config struct {
-	Logging    Logging `yaml:"logging"`
-	Aws        Aws     `yaml:"aws,omitempty"`
-	Azure      Azure   `yaml:"azure,omitempty"`
-	HashiVault HCVault `yaml:"hcvault,omitempty"`
+	Logging    Logging  `yaml:"logging"`
+	Aws        Aws      `yaml:"aws,omitempty"`
+	Azure      Azure    `yaml:"azure,omitempty"`
+	HashiVault HCVault  `yaml:"hcvault,omitempty"`
+	Secrets    []string `yaml:"secrets,omitempty"`
 }
 
 // Logging struct defines the parameters for logging
