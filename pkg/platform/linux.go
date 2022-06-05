@@ -183,12 +183,6 @@ func (l *Linux) List(c *cli.Context, cfg api.Config, secretNames []string, user 
 		cred, err := keyring.Get(secret, string(user.Username))
 		if err == nil {
 			value := string(cred)
-
-			if c.Bool("export-as-tfvars") {
-				fmt.Printf("TF_VAR_%s=%s\n", secret, value)
-				continue
-			}
-
 			secretValues = append(secretValues, value)
 		}
 	}

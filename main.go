@@ -587,6 +587,15 @@ func main() {
 							helpers.CheckError(err)
 						}
 
+						if c.Bool("as-tfvars") {
+							for i, name := range secretNames {
+								fmt.Printf("TF_VAR_%s=%s\n", name, list[i])
+								continue
+							}
+
+							return nil
+						}
+
 						for _, secret := range list {
 							value := fmt.Sprintf("%s\n", secret)
 							print(value)

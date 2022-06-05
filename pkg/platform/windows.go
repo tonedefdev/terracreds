@@ -191,12 +191,6 @@ func (w *Windows) List(c *cli.Context, cfg api.Config, secretNames []string, use
 		cred, err := wincred.GetGenericCredential(secret)
 		if err == nil && cred.UserName == user.Username {
 			value := string(cred.CredentialBlob)
-
-			if c.Bool("as-tfvars") {
-				fmt.Printf("TF_VAR_%s=%s\n", secret, value)
-				continue
-			}
-
 			secretValues = append(secretValues, value)
 		} else {
 			return nil, err
