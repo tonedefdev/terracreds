@@ -1,5 +1,0 @@
-logging:
-  enabled: true
-  path: C:\Temp\
-gcp:
-  projectId: rekrootu

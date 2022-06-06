@@ -85,7 +85,7 @@ func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 	}
 
 	if cfg.GCP.ProjectId != "" {
-		vault := &vault.GCPSecretsManager{
+		vault := &vault.GCPSecretManager{
 			ProjectId: cfg.GCP.ProjectId,
 			SecretId:  hostname,
 		}

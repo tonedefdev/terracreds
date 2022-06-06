@@ -13,13 +13,12 @@ import (
 
 var ctx = context.Background()
 
-type GCPSecretsManager struct {
-	ProjectId  string
-	SecretId   string
-	SecretList []string
+type GCPSecretManager struct {
+	ProjectId string
+	SecretId  string
 }
 
-func (gcp *GCPSecretsManager) getClient() *secretmanager.Client {
+func (gcp *GCPSecretManager) getClient() *secretmanager.Client {
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
 		helpers.CheckError(err)
@@ -34,7 +33,7 @@ func formatGcpSecretName(secretName string) string {
 	return hostname
 }
 
-func (gcp *GCPSecretsManager) Create(secretValue string, method string) error {
+func (gcp *GCPSecretManager) Create(secretValue string, method string) error {
 	client := gcp.getClient()
 	defer client.Close()
 
@@ -79,7 +78,6 @@ func (gcp *GCPSecretsManager) Create(secretValue string, method string) error {
 	}
 
 	payload := []byte(secretValue)
-
 	addSecretVersionReq := &secretmanagerpb.AddSecretVersionRequest{
 		Parent: secret.Name,
 		Payload: &secretmanagerpb.SecretPayload{
@@ -95,7 +93,7 @@ func (gcp *GCPSecretsManager) Create(secretValue string, method string) error {
 	return err
 }
 
-func (gcp *GCPSecretsManager) Delete() error {
+func (gcp *GCPSecretManager) Delete() error {
 	client := gcp.getClient()
 	defer client.Close()
 
@@ -122,7 +120,7 @@ func (gcp *GCPSecretsManager) Delete() error {
 	return err
 }
 
-func (gcp *GCPSecretsManager) Get() ([]byte, error) {
+func (gcp *GCPSecretManager) Get() ([]byte, error) {
 	client := gcp.getClient()
 	defer client.Close()
 
@@ -139,7 +137,7 @@ func (gcp *GCPSecretsManager) Get() ([]byte, error) {
 	return result.Payload.Data, err
 }
 
-func (gcp *GCPSecretsManager) List(secretNames []string) ([]string, error) {
+func (gcp *GCPSecretManager) List(secretNames []string) ([]string, error) {
 	var secretValues []string
 	client := gcp.getClient()
 	defer client.Close()

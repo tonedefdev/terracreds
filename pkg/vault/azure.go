@@ -9,7 +9,6 @@ import (
 )
 
 type AzureKeyVault struct {
-	SecretList     []string
 	SecretName     string
 	SubscriptionId string
 	VaultUri       string
