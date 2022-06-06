@@ -2,7 +2,6 @@ package platform
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -24,14 +23,20 @@ func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *u
 	var method string
 	method = "Updated"
 
-	if cfg.Aws.Region != "" || cfg.Azure.VaultUri != "" {
-		return errors.New("terracreds doesn't currently support using the AWS or Azure provider on macOS")
-	}
-
-	if vault != nil && cfg.HashiVault.VaultUri != "" {
+	if vault != nil {
 		_, err := vault.Get()
 		if err != nil {
 			method = "Created"
+		}
+
+		if token == nil {
+			var response api.CredentialResponse
+			err = json.NewDecoder(os.Stdin).Decode(&response)
+			if err != nil {
+				helpers.CheckError(err)
+			}
+
+			token = response.Token
 		}
 
 		secretValue := fmt.Sprintf("%v", token)
@@ -52,7 +57,6 @@ func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *u
 
 	if token == nil {
 		var response api.CredentialResponse
-
 		err = json.NewDecoder(os.Stdin).Decode(&response)
 		if err != nil {
 			helpers.CheckError(err)

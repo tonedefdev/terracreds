@@ -202,14 +202,14 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) {
 		userProfile := os.Getenv("USERPROFILE")
 		cliConfig = userProfile + "\\AppData\\Roaming\\terraform.rc"
 		tfPlugins = userProfile + "\\AppData\\Roaming\\terraform.d\\plugins"
-		binary = fmt.Sprintf("%s\\terraform-credentials-terracreds_%s.exe", tfPlugins, version)
+		binary = fmt.Sprintf("%s\\terraform-credentials-terracreds.exe", tfPlugins)
 	}
 
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
 		cliConfig = userProfile + "/.terraform.d/.terraformrc"
 		tfPlugins = userProfile + "/.terraform.d/plugins"
-		binary = fmt.Sprintf("%s/terraform-credentials-terracreds_%s", tfPlugins, version)
+		binary = fmt.Sprintf("%s/terraform-credentials-terracreds", tfPlugins)
 	}
 
 	NewDirectory(tfPlugins)

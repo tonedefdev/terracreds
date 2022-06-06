@@ -17,6 +17,9 @@ import (
 	"github.com/tonedefdev/terracreds/pkg/vault"
 )
 
+const cfgName = "config.yaml"
+const version = "2.1.0"
+
 var (
 	cfg            api.Config
 	configFilePath string
@@ -69,9 +72,9 @@ func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 
 	if cfg.Azure.VaultUri != "" {
 		vault := &vault.AzureKeyVault{
-			SecretName: hostname,
-			UseMSI:     cfg.Azure.UseMSI,
-			VaultUri:   cfg.Azure.VaultUri,
+			SecretName:     hostname,
+			SubscriptionId: cfg.Azure.SubscriptionId,
+			VaultUri:       cfg.Azure.VaultUri,
 		}
 
 		if cfg.Azure.SecretName != "" {
@@ -114,14 +117,12 @@ func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 }
 
 func main() {
-	version := "2.1.0"
-
 	fileEnvVar := os.Getenv("TC_CONFIG_PATH")
 	if fileEnvVar != "" {
-		configFilePath = fileEnvVar + "config.yaml"
+		configFilePath = fileEnvVar + cfgName
 	} else {
 		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
-		configFilePath = binPath + "config.yaml"
+		configFilePath = binPath + cfgName
 	}
 
 	err := helpers.CreateConfigFile(configFilePath)
@@ -185,7 +186,7 @@ func main() {
 
 							// Set all other config values to empty
 							cfg.Azure.SecretName = ""
-							cfg.Azure.UseMSI = false
+							cfg.Azure.SubscriptionId = ""
 							cfg.Azure.VaultUri = ""
 
 							cfg.GCP.ProjectId = ""
@@ -215,9 +216,10 @@ func main() {
 								Value:    "",
 								Required: false,
 							},
-							&cli.BoolFlag{
-								Name:     "use-msi",
-								Usage:    "A flag to indicate if the Managed Identity of the Azure VM should be used for authentication",
+							&cli.StringFlag{
+								Name:     "subscription-id",
+								Aliases:  []string{"id"},
+								Usage:    "The subscription ID where the Key Vault instance has been created",
 								Required: true,
 							},
 							&cli.StringFlag{
@@ -228,7 +230,7 @@ func main() {
 						},
 						Action: func(c *cli.Context) error {
 							cfg.Azure.SecretName = c.String("secret-name")
-							cfg.Azure.UseMSI = c.Bool("use-msi")
+							cfg.Azure.SubscriptionId = c.String("subscription-id")
 							cfg.Azure.VaultUri = c.String("vault-uri")
 
 							// Set all other config values to empty
@@ -275,7 +277,7 @@ func main() {
 
 							// Set all other config values to empty
 							cfg.Azure.SecretName = ""
-							cfg.Azure.UseMSI = false
+							cfg.Azure.SubscriptionId = ""
 							cfg.Azure.VaultUri = ""
 
 							cfg.Aws.Description = ""
@@ -340,7 +342,7 @@ func main() {
 							cfg.Aws.SecretName = ""
 
 							cfg.Azure.SecretName = ""
-							cfg.Azure.UseMSI = false
+							cfg.Azure.SubscriptionId = ""
 							cfg.Azure.VaultUri = ""
 
 							cfg.GCP.ProjectId = ""
@@ -437,7 +439,7 @@ func main() {
 							cfg.Aws.SecretName = ""
 
 							cfg.Azure.SecretName = ""
-							cfg.Azure.UseMSI = false
+							cfg.Azure.SubscriptionId = ""
 							cfg.Azure.VaultUri = ""
 
 							cfg.GCP.ProjectId = ""

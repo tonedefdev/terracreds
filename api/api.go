@@ -19,8 +19,8 @@ type Azure struct {
 	// if omitted Terracreds will use the hostname value instead
 	SecretName string `yaml:"secretName,omitempty"`
 
-	// UseMSI (Required) A flag to indicate if the Managed Identity of the Azure VM should be used for authentication
-	UseMSI bool `yaml:"useMSI"`
+	// SubscriptionId (Required) The subscription ID where the target Key Vault has been created
+	SubscriptionId string `yaml:"subscriptionId,omitempty"`
 
 	// VaultUri (Required) The FQDN of the Azure Key Vault resource
 	VaultUri string `yaml:"vaultUri,omitempty"`

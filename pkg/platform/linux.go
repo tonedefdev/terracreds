@@ -29,6 +29,16 @@ func (l *Linux) Create(cfg api.Config, hostname string, token interface{}, user 
 			method = "Created"
 		}
 
+		if token == nil {
+			var response api.CredentialResponse
+			err = json.NewDecoder(os.Stdin).Decode(&response)
+			if err != nil {
+				helpers.CheckError(err)
+			}
+
+			token = response.Token
+		}
+
 		secretValue := fmt.Sprintf("%v", token)
 		err = vault.Create(secretValue, method)
 		if err != nil {
@@ -47,7 +57,6 @@ func (l *Linux) Create(cfg api.Config, hostname string, token interface{}, user 
 
 	if token == nil {
 		var response api.CredentialResponse
-
 		err = json.NewDecoder(os.Stdin).Decode(&response)
 		if err != nil {
 			helpers.CheckError(err)
