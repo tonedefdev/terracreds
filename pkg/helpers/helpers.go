@@ -27,17 +27,24 @@ func CheckError(e error) {
 // destination path.
 func CopyTerraCreds(dest string) error {
 	from, err := os.Open(string(os.Args[0]))
-	CheckError(err)
+	if err != nil {
+		return err
+	}
 	defer from.Close()
 
 	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0755)
-	CheckError(err)
+	if err != nil {
+		return err
+	}
 	defer to.Close()
 
 	_, err = io.Copy(to, from)
-	CheckError(err)
+	if err != nil {
+		return err
+	}
+
 	fmt.Fprintf(color.Output, "%s: Copied binary '%s' to '%s'\n", color.CyanString("INFO"), string(os.Args[0]), dest)
-	return nil
+	return err
 }
 
 // GetBinaryPath returns the directory of the binary path
@@ -95,7 +102,10 @@ func NewDirectory(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			err := os.Mkdir(path, 0755)
-			CheckError(err)
+			if err != nil {
+				return err
+			}
+
 			fmt.Fprintf(color.Output, "%s: Created directory '%s'\n", color.CyanString("INFO"), path)
 		}
 	}
@@ -106,11 +116,17 @@ func NewDirectory(path string) error {
 // checking for errors and syncing at the end.
 func WriteToFile(filename string, data string) error {
 	file, err := os.Create(filename)
-	CheckError(err)
+	if err != nil {
+		return err
+	}
+
 	defer file.Close()
 
 	_, err = io.WriteString(file, data)
-	CheckError(err)
+	if err != nil {
+		return err
+	}
+
 	fmt.Fprintf(color.Output, "%s: Created file '%s'\n", color.CyanString("INFO"), filename)
 	return file.Sync()
 }
@@ -118,9 +134,11 @@ func WriteToFile(filename string, data string) error {
 // WriteToLog will create a log if it doesn't exist and then append
 // messages to the log
 func WriteToLog(path string, data string, level string) error {
-	f, err := os.OpenFile(path,
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
-	CheckError(err)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+	if err != nil {
+		return err
+	}
+
 	defer f.Close()
 
 	logger := log.New(f, level, log.LstdFlags)
@@ -141,18 +159,25 @@ func CreateConfigFile(path string) error {
 
 			bytes, err := yaml.Marshal(&cfgFile)
 			err = ioutil.WriteFile(path, bytes, 0755)
-			CheckError(err)
+			if err != nil {
+				return err
+			}
+
 			fmt.Fprintf(color.Output, "%s: Created file '%s'\n", color.CyanString("INFO"), path)
 			return err
 		}
 	}
+
 	return nil
 }
 
 // LoadConfig loads the config file if it exists
 func LoadConfig(path string, cfg *api.Config) error {
 	bytes, err := ioutil.ReadFile(path)
-	CheckError(err)
+	if err != nil {
+		return err
+	}
+
 	err = yaml.Unmarshal(bytes, &cfg)
 	return err
 }
@@ -160,9 +185,15 @@ func LoadConfig(path string, cfg *api.Config) error {
 // WriteConfig makes requested changes to config file
 func WriteConfig(path string, cfg *api.Config) error {
 	bytes, err := yaml.Marshal(&cfg)
-	CheckError(err)
+	if err != nil {
+		return err
+	}
+
 	err = ioutil.WriteFile(path, bytes, 0755)
-	CheckError(err)
+	if err != nil {
+		return err
+	}
+
 	fmt.Fprintf(color.Output, "%s: Modified config file '%s'\n", color.GreenString("SUCCESS"), path)
 	return err
 }
@@ -193,7 +224,7 @@ func LogLevel(level string) string {
 
 // GenerateTerracreds creates the binary to use this package as a credential helper
 // and optionally the terraform.rc file
-func GenerateTerraCreds(c *cli.Context, version string, confirm string) {
+func GenerateTerraCreds(c *cli.Context, version string, confirm string) error {
 	var cliConfig string
 	var tfPlugins string
 	var binary string
@@ -212,8 +243,16 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) {
 		binary = fmt.Sprintf("%s/terraform-credentials-terracreds", tfPlugins)
 	}
 
-	NewDirectory(tfPlugins)
-	CopyTerraCreds(binary)
+	err := NewDirectory(tfPlugins)
+	if err != nil {
+		return err
+	}
+
+	err = CopyTerraCreds(binary)
+	if err != nil {
+		return err
+	}
+
 	if c.Bool("create-cli-config") == true {
 		const verbiage = "This command will delete any settings in your .terraformrc file\n\n    Enter 'yes' to coninue or press 'enter' or 'return' to cancel: "
 		fmt.Fprintf(color.Output, "%s: %s", color.YellowString("WARNING"), verbiage)
@@ -225,9 +264,13 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) {
 			credentials_helper "terracreds" {
 				args = []
 			}`)
-			WriteToFile(cliConfig, doc)
+
+			err := WriteToFile(cliConfig, doc)
+			return err
 		}
 	}
+
+	return nil
 }
 
 // GetSecretName returns the name of the secret from the config
