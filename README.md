@@ -355,6 +355,7 @@ Any attempt to access or modify this secret from `terracreds` outside of the use
 
 ## Logging
 > New in version `2.1.0`
+
 By default `terracreds` will generate a configuration file in the same location where the `terracreds` binary was first run. This can now be overridden by setting an environment variable that sets the path to the desired location of the configuration file:
 
 For Linux/macOS:
