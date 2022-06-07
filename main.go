@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/user"
@@ -30,7 +31,7 @@ var (
 // TerraCreds interface implements these methods for a credential's lifecycle
 type TerraCreds interface {
 	// Create or store a secret in a vault
-	Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error
+	Create(cfg api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error
 	// Delete or forget a secret in a vault
 	Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error
 	// Get or retrieve a secret in a vault
@@ -144,7 +145,7 @@ func main() {
 	app := &cli.App{
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Automation and Collaboration Software (TACOS) that leverages your vault provider of choice for securely storing API tokens or other secrets.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
-		UsageText: "Store Terraform Automation and Collaboration Software API tokens by running 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -s myAPItoken'",
+		UsageText: "Store Terraform Automation and Collaboration Software API tokens by running 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -v myAPItoken'",
 		Version:   version,
 		Commands: []*cli.Command{
 			{
@@ -627,6 +628,12 @@ func main() {
 						Usage:    "Exports the secret keys and values as 'TF_VARS_secret_key=secret_value' for the given operating system",
 						Required: false,
 					},
+					&cli.BoolFlag{
+						Name:     "as-json",
+						Value:    false,
+						Usage:    "Prints the secret keys and values as a JSON string",
+						Required: false,
+					},
 				},
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
@@ -661,10 +668,24 @@ func main() {
 							helpers.CheckError(err)
 						}
 
+						if c.Bool("as-json") {
+							body := make(map[string]string, len(secretNames))
+							for i, name := range secretNames {
+								body[name] = list[i]
+							}
+
+							json, err := json.Marshal(body)
+							if err != nil {
+								helpers.CheckError(err)
+							}
+
+							fmt.Println(string(json))
+							return nil
+						}
+
 						if c.Bool("as-tfvars") {
 							for i, name := range secretNames {
 								fmt.Printf("TF_VAR_%s=%s\n", name, list[i])
-								continue
 							}
 
 							return nil
@@ -672,7 +693,7 @@ func main() {
 
 						for _, secret := range list {
 							value := fmt.Sprintf("%s\n", secret)
-							print(value)
+							fmt.Println(value)
 						}
 
 						return nil

@@ -19,24 +19,24 @@ import (
 type Mac struct{}
 
 // Create stores or updates a Terraform API token in MacOS Keyring
-func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
+func (m *Mac) Create(cfg api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
+
+	if token == nil {
+		var response api.CredentialResponse
+		err := json.NewDecoder(os.Stdin).Decode(&response)
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		token = response.Token
+	}
 
 	if vault != nil {
 		_, err := vault.Get()
 		if err != nil {
 			method = "Created"
-		}
-
-		if token == nil {
-			var response api.CredentialResponse
-			err = json.NewDecoder(os.Stdin).Decode(&response)
-			if err != nil {
-				helpers.CheckError(err)
-			}
-
-			token = response.Token
 		}
 
 		secretValue := fmt.Sprintf("%v", token)
@@ -53,17 +53,6 @@ func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *u
 	_, err := keyring.Get(hostname, string(user.Username))
 	if err != nil {
 		method = "Created"
-	}
-
-	if token == nil {
-		var response api.CredentialResponse
-		err = json.NewDecoder(os.Stdin).Decode(&response)
-		if err != nil {
-			helpers.CheckError(err)
-		}
-
-		err = keyring.Set(hostname, string(user.Username), response.Token)
-		return err
 	}
 
 	str := fmt.Sprintf("%v", token)
@@ -177,6 +166,10 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 
 func (m *Mac) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
 	var secretValues []string
+	if cfg.Logging.Enabled == true {
+		msg := fmt.Sprintf("- user requesting access: %s", string(user.Username))
+		helpers.Logging(cfg, msg, "INFO")
+	}
 
 	if vault != nil {
 		secrets, err := vault.List(secretNames)
@@ -188,6 +181,11 @@ func (m *Mac) List(c *cli.Context, cfg api.Config, secretNames []string, user *u
 	}
 
 	for _, secret := range secretNames {
+		if cfg.Logging.Enabled == true {
+			msg := fmt.Sprintf("- secret name requested: %s", secret)
+			helpers.Logging(cfg, msg, "INFO")
+		}
+
 		cred, err := keyring.Get(secret, string(user.Username))
 		if err == nil {
 			value := string(cred)

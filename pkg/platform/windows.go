@@ -19,24 +19,24 @@ import (
 type Windows struct{}
 
 // Create stores or updates a Terafform API token in Windows Credential Manager or a specified Cloud Vault
-func (w *Windows) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
+func (w *Windows) Create(cfg api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
+
+	if token == nil {
+		var response api.CredentialResponse
+		err := json.NewDecoder(os.Stdin).Decode(&response)
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		token = response.Token
+	}
 
 	if vault != nil {
 		_, err := vault.Get()
 		if err != nil {
 			method = "Created"
-		}
-
-		if token == nil {
-			var response api.CredentialResponse
-			err = json.NewDecoder(os.Stdin).Decode(&response)
-			if err != nil {
-				helpers.CheckError(err)
-			}
-
-			token = response.Token
 		}
 
 		secretValue := fmt.Sprintf("%v", token)
@@ -56,19 +56,6 @@ func (w *Windows) Create(cfg api.Config, hostname string, token interface{}, use
 	}
 
 	cred := wincred.NewGenericCredential(hostname)
-	if token == nil {
-		var response api.CredentialResponse
-		err = json.NewDecoder(os.Stdin).Decode(&response)
-		if err != nil {
-			helpers.CheckError(err)
-		}
-
-		cred.CredentialBlob = []byte(response.Token)
-		cred.UserName = string(user.Username)
-		err = cred.Write()
-		return err
-	}
-
 	str := fmt.Sprintf("%v", token)
 	cred.CredentialBlob = []byte(str)
 	cred.UserName = string(user.Username)
@@ -140,7 +127,7 @@ func (w *Windows) Delete(cfg api.Config, command string, hostname string, user *
 // Get retrieves a Terraform API token in Windows Credential Manager
 func (w *Windows) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
-		msg := fmt.Sprintf("- terraform server: %s", hostname)
+		msg := fmt.Sprintf("- secret name requested: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")
 		msg = fmt.Sprintf("- user requesting access: %s", string(user.Username))
 		helpers.Logging(cfg, msg, "INFO")
@@ -167,9 +154,8 @@ func (w *Windows) Get(cfg api.Config, hostname string, user *user.User, vault va
 		}
 
 		token, err := json.Marshal(response)
-
 		if cfg.Logging.Enabled == true {
-			msg := fmt.Sprintf("- token was retrieved for: %s", hostname)
+			msg := fmt.Sprintf("- secret was retrieved for: %s", hostname)
 			helpers.Logging(cfg, msg, "INFO")
 		}
 
@@ -186,6 +172,10 @@ func (w *Windows) Get(cfg api.Config, hostname string, user *user.User, vault va
 
 func (w *Windows) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
 	var secretValues []string
+	if cfg.Logging.Enabled == true {
+		msg := fmt.Sprintf("- user requesting access: %s", string(user.Username))
+		helpers.Logging(cfg, msg, "INFO")
+	}
 
 	if vault != nil {
 		secrets, err := vault.List(secretNames)
@@ -197,6 +187,11 @@ func (w *Windows) List(c *cli.Context, cfg api.Config, secretNames []string, use
 	}
 
 	for _, secret := range secretNames {
+		if cfg.Logging.Enabled == true {
+			msg := fmt.Sprintf("- secret name requested: %s", secret)
+			helpers.Logging(cfg, msg, "INFO")
+		}
+
 		cred, err := wincred.GetGenericCredential(secret)
 		if err == nil && cred.UserName == user.Username {
 			value := string(cred.CredentialBlob)
