@@ -5,6 +5,7 @@ builds:
   - linux
   goarch:
   - amd64
+  - arm64
   binary: terracreds
 archives:
 - name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"

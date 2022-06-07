@@ -18,14 +18,17 @@ import (
 	"github.com/tonedefdev/terracreds/pkg/vault"
 )
 
-const cfgName = "config.yaml"
-const version = "2.1.0"
+const (
+	cfgName = "config.yaml"
+	version = "2.1.0"
+)
 
 var (
-	cfg            api.Config
-	configFilePath string
-	confirm        string
-	secretNames    []string
+	cfg                  api.Config
+	configFilePath       string
+	confirm              string
+	defaultReplaceString = "_"
+	secretNames          []string
 )
 
 // TerraCreds interface implements these methods for a credential's lifecycle
@@ -634,6 +637,12 @@ func main() {
 						Usage:    "Prints the secret keys and values as a JSON string",
 						Required: false,
 					},
+					&cli.StringFlag{
+						Name:     "override-replace-string",
+						Value:    "",
+						Usage:    "When running '--as-tfvars' the default is to replace any dashes [-] in the secret name with underscores [_]. This flag overrides that behavior and will instead replace dashes with this value",
+						Required: false,
+					},
 				},
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
@@ -685,7 +694,12 @@ func main() {
 
 						if c.Bool("as-tfvars") {
 							for i, name := range secretNames {
-								fmt.Printf("TF_VAR_%s=%s\n", name, list[i])
+								if c.String("override-replace-string") != "" {
+									defaultReplaceString = c.String("override-replace-string")
+								}
+
+								formatSecretName := strings.Replace(name, "-", defaultReplaceString, -1)
+								fmt.Printf("TF_VAR_%s=%s\n", formatSecretName, list[i])
 							}
 
 							return nil
@@ -693,7 +707,7 @@ func main() {
 
 						for _, secret := range list {
 							value := fmt.Sprintf("%s\n", secret)
-							fmt.Println(value)
+							fmt.Print(value)
 						}
 
 						return nil
