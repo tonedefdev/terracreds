@@ -742,6 +742,6 @@ func main() {
 		},
 	}
 
-	err = app.Run(os.Args)
-	helpers.CheckError(err)
+	app.EnableBashCompletion = true
+	app.Run(os.Args)
 }
