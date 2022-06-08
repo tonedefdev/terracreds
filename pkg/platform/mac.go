@@ -2,13 +2,13 @@ package platform
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/user"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
 	"github.com/zalando/go-keyring"
 
 	"github.com/tonedefdev/terracreds/api"
@@ -19,15 +19,21 @@ import (
 type Mac struct{}
 
 // Create stores or updates a Terraform API token in MacOS Keyring
-func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *user.User, vault vault.TerraVault) error {
+func (m *Mac) Create(cfg api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
 
-	if cfg.Aws.Region != "" || cfg.Azure.VaultUri != "" {
-		return errors.New("Terracreds doesn't currently support using the AWS or Azure provider on macOS")
+	if token == nil {
+		var response api.CredentialResponse
+		err := json.NewDecoder(os.Stdin).Decode(&response)
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		token = response.Token
 	}
 
-	if vault != nil && cfg.HashiVault.VaultUri != "" {
+	if vault != nil {
 		_, err := vault.Get()
 		if err != nil {
 			method = "Created"
@@ -47,15 +53,6 @@ func (m *Mac) Create(cfg api.Config, hostname string, token interface{}, user *u
 	_, err := keyring.Get(hostname, string(user.Username))
 	if err != nil {
 		method = "Created"
-	}
-
-	if token == nil {
-		err = json.NewDecoder(os.Stdin).Decode(&api.CredentialResponse{})
-		if err != nil {
-			helpers.CheckError(err)
-		}
-		err = keyring.Set(hostname, string(user.Username), api.CredentialResponse{}.Token)
-		return err
 	}
 
 	str := fmt.Sprintf("%v", token)
@@ -165,4 +162,36 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 
 	fmt.Fprintf(color.Output, "%s: You do not have permission to view this credential\n", color.RedString("ERROR"))
 	return nil, err
+}
+
+func (m *Mac) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
+	var secretValues []string
+	if cfg.Logging.Enabled == true {
+		msg := fmt.Sprintf("- user requesting access: %s", string(user.Username))
+		helpers.Logging(cfg, msg, "INFO")
+	}
+
+	if vault != nil {
+		secrets, err := vault.List(secretNames)
+		if err != nil {
+			return nil, err
+		}
+
+		return secrets, nil
+	}
+
+	for _, secret := range secretNames {
+		if cfg.Logging.Enabled == true {
+			msg := fmt.Sprintf("- secret name requested: %s", secret)
+			helpers.Logging(cfg, msg, "INFO")
+		}
+
+		cred, err := keyring.Get(secret, string(user.Username))
+		if err == nil {
+			value := string(cred)
+			secretValues = append(secretValues, value)
+		}
+	}
+
+	return secretValues, nil
 }

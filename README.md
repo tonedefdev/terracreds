@@ -3,9 +3,9 @@
 <img src="https://github.com/tonedefdev/terracreds/blob/main/img/terracreds.png?raw=true" align="right" width="350" height="350">
 
 # Terracreds
-A credential helper for Terraform Cloud/Enterprise, or to store other secrets, securely in the operating system's credential vault or through a third party vault. No longer keep secrets in a plain text configuration file!
+A credential helper for Terraform Automation and Collaboration Software, or to store any other secrets, securely in the operating system's credential vault or through a third party vault provider. No longer keep secrets in a plain text configuration file!
 
-We all know storing secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to help enable stronger security practices
+We all know storing secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to help enable stronger security practices.
 
 #### Currently supported Operating Systems:
 - [x] Windows (Credential Manager)
@@ -15,13 +15,20 @@ We all know storing secrets in plain text can pose major security threats, and T
 #### Currently supported Vault providers:
 - [x] AWS Secrets Manager
 - [x] Azure Key Vault
-- [ ] Google Secret Manager 
+- [x] Google Secret Manager 
 - [x] HashiCorp Vault
+
+#### Currently Supported Terraform Automation and Collaboration Software:
+- [x] env0
+- [x] Scalr
+- [x] Spacelift
+- [x] Terraform Cloud
+- [x] Terraform Enterprise
 
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
 ```powershell
-choco install terracreds --version "2.0.0" -y
+choco install terracreds --version "2.1.0" -y
 ```
 
 Once installed run the following command to verify `terracreds` was installed properly:
@@ -31,25 +38,25 @@ terracreds -v
 
 To upgrade `terracreds` to the latest version with Chocolatey run the the following command:
 ```powershell
-choco upgrade terracreds --version "2.0.0" -y
+choco upgrade terracreds --version "2.1.0" -y
 ```
 
 ## macOS Install
 We are currently working on a `homebrew` package, however, to install the package simply download our latest release from this repository, 
-extract the package, and then place it in a directory available on `$HOME`
+extract the package, and then place it in a directory available on `$HOME`.
 
 ## Linux Install
 You'll need to download the latest binary from our release page and place it anywhere on `$PATH` of your system. You can also copy and run the following commands:
 
 ```bash
-wget https://github.com/tonedefdev/terracreds/releases/download/v2.0.0/terracreds_2.0.0_linux_amd64.tar.gz && \
-tar -xvf terracreds_2.0.0_linux_amd64.tar.gz && \
+wget https://github.com/tonedefdev/terracreds/releases/download/v2.1.0/terracreds_2.1.0_linux_amd64.tar.gz && \
+tar -xvf terracreds_2.1.0_linux_amd64.tar.gz && \
 sudo mv -f terracreds /usr/bin/terracreds && \
-rm -f terracreds_2.0.0_linux_amd64.tar.gz README.md
+rm -f terracreds_2.1.0_linux_amd64.tar.gz README.md
 ```
 
 The `terracreds` Linux implementation uses `gnome-keyring` in conjunction with `gnome-keyring-daemon` 
-to utilize the credential storage engine
+to utilize the credential storage engine.
 
 In order to leverage `terracreds` to have access to the default `Login` collection you'll need to unlock 
 the collection with `gnome-keyring-daemon` using an empty password:
@@ -58,7 +65,7 @@ the collection with `gnome-keyring-daemon` using an empty password:
 echo "" | gnome-keyring-daemon --unlock
 ```
 > You do have the option of setting a password by passing it in with `echo` but every call to `terracreds get` will require the 
-unlock password
+unlock password.
 
 The command, if successful, should return the following:
 ```txt
@@ -93,22 +100,22 @@ Once the files have been downloaded navigate to the `terracreds` directory in th
 go install -v
 ```
 
-Navigate to the root of the project directory and you should see the `terracreds.exe` binary for Windows or `terracreds` for macOS and Linux. On Windows, copy the `.exe` to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier. On macOS and Linux we recommend you place the binary in `/usr/bin` as this directory should already be on the `$PATH` environment variable
+Navigate to the root of the project directory and you should see the `terracreds.exe` binary for Windows or `terracreds` for macOS and Linux. On Windows, copy the `.exe` to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier. On macOS and Linux we recommend you place the binary in `/usr/bin` as this directory should already be on the `$PATH` environment variable.
 
 ## Upgrading
-If you're upgrading to the latest version of `terracreds` from a previous version use one of the methods above to install the latest binary. Once successfully installed on your system you just need to run `terracreds generate` to copy the latest version to the correct `plugins` directory for your operating system
+If you're upgrading to the latest version of `terracreds` from a previous version use one of the methods above to install the latest binary. Once successfully installed on your system you just need to run `terracreds generate` to copy the latest version to the correct `plugins` directory for your operating system.
 
 ## Initial Configuration
-In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS and Linux `$HOME/.terraform.d/.terraformrc`
+In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS and Linux `$HOME/.terraform.d/.terraformrc`.
 
 To make things as simple as possible we created a helper command to generate everthing needed to use the app. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
 ```bash
 terracreds generate
 ```
 
-This command will generate the binary as `terraform-credentials-terracreds.exe` for Windows or `terraform-credentials-terracreds` for macOS and Linux which is the valid naming convention for Terraform to recognize this plugin as a credential helper
+This command will generate the binary as `terraform-credentials-terracreds.exe` for Windows or `terraform-credentials-terracreds` for macOS and Linux which is the valid naming convention for Terraform to recognize this plugin as a credential helper.
 
-In addition to the binary and plugin a `terraform.rc` file is required for Windows or `.terraformrc` for macOS and Linux with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` or a `.terraformrc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary for your OS
+In addition to the binary and plugin a `terraform.rc` file is required for Windows or `.terraformrc` for macOS and Linux with a `credentials_helper` block which instructs Terraform to use the specified credential helper. If you don't already have a `terraform.rc` or a `.terraformrc` file you can pass in `--create-cli-config` to create the file with the credentials helper block already generated for use with the `terracreds` binary for your OS.
 
 However, if you already have a `terraform.rc` or `.terraformrc` file you will need to add the following block to your file instead:
 
@@ -118,16 +125,16 @@ credentials_helper "terracreds" {
 }
 ```
 
-Once you have moved all of your tokens from this file to the `Windows Credential Manager` or `KeyChain` via `terracreds` you can remove the tokens from the file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens, so be sure to remove your tokens from this file once you have used the `create` or `terraform login` command to create the credentials in `terracreds` so you can actually leverage the credential helper
+Once you have moved all of your tokens from this file to the `Windows Credential Manager` or `KeyChain` via `terracreds` you can remove the tokens from the file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens, so be sure to remove your tokens from this file once you have used the `create` or `terraform login` command to create the credentials in `terracreds` so you can actually leverage the credential helper.
 
 ## Storing Credentials
-For Terraform to properly use the credentials stored in your credential manager they need to be stored a specific way. The name of the credential object must be the domain name of the Terraform Cloud or Enterprise server. For instance `app.terraform.io` which is the default name `terraform login` will use
+For Terraform to properly use the credentials stored in your credential manager they need to be stored a specific way. The name of the credential object must be the domain name of the Terraform Automation and Collaboration server. For instance `app.terraform.io` which is the default name `terraform login` will leverage.
 
-The value for the password will correspond to the API token associated for that specific Terraform Cloud or Enterprise server
+The value for the password will correspond to the API token associated for that specific Terraform Automation and Collaboration server.
 
-The entire process is kicked off directly from the Terraform CLI. Run `terraform login` to start the login process with Terraform Cloud. If you're using Terraform Enterprise you'll need to pass the hostname of the server as an additional argument `terraform login my.tfe.com`
+The entire process is kicked off directly from the Terraform CLI. Run `terraform login` to start the login process with Terraform Cloud. If you're using Terraform Enterprise or another Terraform Automation and Collaboration Software solution you'll need to pass the hostname of the server as an additional argument `terraform login my.tacos.com`.
 
-You'll be sent to your Terraform Cloud instance where you'll be requested to sign-in with your account, and then sent to create an API token. Create the API token with any name you'd like for this example we'll use `terracreds`
+You'll be sent to your Terraform Automation and Collaboration Software instance where you'll be requested to sign-in with your account, and then sent to create an API token. Create the API token with any name you'd like for this example we'll use `terracreds`.
 
 Once completed, copy the generated token, paste it into your terminal, and then hit enter. Terraform will then leverage `terracreds` to store the credentials in the operating system's credential manager. If all went well you should receive the following success message:
 
@@ -139,6 +146,11 @@ In the background `terraform` calls `terracreds` as its credential helper, `terr
 
 ```bash
 terraform-credentials-terracreds store app.terraform.io
+```
+
+If you prefer, you can also perform creating credentials manually by running:
+```bash
+terracreds create -n app.terraform.io -v <TACOS_API_TOKEN>
 ```
 
 ## Verifying Credentials
@@ -165,7 +177,9 @@ If the token was updated successfully the following message is returned:
 Success! Terraform has obtained and saved an API token.
 ```
 
-Additionally, you can check the `terracreds.log` if logging is enabled for more information
+You can also run `terracreds update -n my-secret -v my-secret-value` to update a secret value.
+
+Additionally, you can check the `terracreds.log` if logging is enabled for more information.
 
 ## Forgetting Credentials
 You can delete the credential object at any time by running:
@@ -183,14 +197,54 @@ If the credential was successfully deleted `terraform` will return:
 Success! Terraform has removed the stored API token for app.terraform.io.
 ```
 
-Additionally, you can check the `terracreds.log` if logging is enabled for more information
+You can also run `terracreds delete -n app.terraform.io` if you want to manually remove the credential.
+
+Additionally, you can check the `terracreds.log` if logging is enabled for more information.
+
+## List Credentials
+> New in version `2.1.0`
+
+You can pass in a comma separated list of secrets to print out the secret values to the screen:
+```bash
+terracreds list -l mysecret,mysecret2
+```
+
+You can also setup a list of secrets in the configuration file by using:
+ ```bash
+ terracreds config secrets -l mysecret,mysecret2
+ ``` 
+
+ To print out the secrets from the names stored in the configuration file:
+ ```bash
+ terracreds list --from-config
+ ```
+
+There's a helper flag `--as-tfvars` which will return the secret values formatted for use with `terraform`. Depending on the shell calling this command will determine how you can readily use these values.
+
+For instance on Linux/macOS you can simply call `eval` to evaluate the output to then convert the returned values into variables in your current shell.
+
+Also, by default, `terracreds` will convert any dashes `[-]` in a secret name with underscores `[_]` since this is the typical variable naming style convention in Terraform. However, you can override that behavior by passing in an override flag with any string value you'd prefer to use:
+```bash
+terracreds list --as-tfvars --override-replace-string -
+```
+
+The above example would maintain the dash `[-]` in the outuput of the formatted TF_VARS instead of replacing it by the default underscore `[_]`
+
+Additionally, you can use `--as-json` to return the secret names and values as a JSON string. This is printed to standard output so you can make use of shell pipes and other commands to ingest the data.
 
 ## Setting Up a Vault Provider
-> You can reference example configs in our [repo](https://github.com/tonedefdev/terracreds/blob/main/config.yaml) plus we have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation
+> You can reference example configs in our [repo](https://github.com/tonedefdev/terracreds/blob/main/config.yaml) plus we have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation.
+
+> New in version `2.1.0`
+
+All of the external vault providers now make use of the provider's default credential authentication schemes. Please, refer to the documentation for each provider's default authentication mechanisms for more information on what options are availabile, and what is required to set up authentication for each method.
+
+### Configure from Terracreds
+> New in version `2.1.0`
+
+You can create and view the configuration for any vault provider by running `terracreds config` and then using the subcommand for the specific vault provider. The commands to generate the config from `terracreds` will be shown for each provider listed below.
 
 ### AWS Secrets Manager
-> Currently, we only support using an `EC2 Instance Role` for authentication. This ensures the highest level of security by alleviating the `secret zero` dilemma
-
 In order to leverage `terracreds` to manage secrets in `AWS Secrets Manager` the following block needs to be provided in the configuration file:
 ```yaml
 aws:
@@ -199,11 +253,16 @@ aws:
   secretName: my-secret-name
 ```
 
+This can be generated via `terracreds` by running:
+```bash
+terracreds config aws --description 'my super secret' --region 'us-west-2' --secret-name 'my-secret-name'
+```
+
 | Value | Description | Required |
 | ----- | ----------- | -------- |
 | `description` | A brief description to provide for the secret object viewable in `Secrets Manager` | `yes` |
 | `region` | The `Secrets Manager` instance's region where the secret will be stored | `yes` | 
-| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TFC\TFE server will be used for the name instead | `no` |
+| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TACOS server will be used for the name instead | `no` |
 
 The following role permissions are required in order for the `EC2 Instance Role` to levearge `terracreds` with `AWS Secrets Manager`:
 ```hcl
@@ -215,20 +274,23 @@ Action = [
 ]
 ```
 ### Azure Key Vault
-> Currently, we only support using a `Managed Service Identity` for authentication. This ensures the highest level of security by alleviating the `secret zero` dilemma
-
 In order to leverage `terracreds` to manage secrets in `Azure Key Vault` the following block needs to be provided in the configuration file:
 ```yaml
 azure:
   secretName: my-secret-name
-  useMSI: true
-  vaultUri: https://keyvault.azure.net
+  subscriptionId: 5df41dfe-4310-46e5-800a-c5bc71ac7ac0
+  vaultUri: https://mykeyvault.vault.azure.net
+```
+
+The configuration can be generated via `terracreds` by running:
+```bash
+terracreds config azure --subscription-id '5df41dfe-4310-46e5-800a-c5bc71ac7ac0' --vault-uri 'https://mykeyvault.vault.azure.net' --secret-name 'my-secret-name'
 ```
 
 | Value | Description | Required |
 | ----- | ----------- | -------- |
-| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TFC\TFE server will be used for the name instead | `no` |
-| `useMSI` | A flag to choose whether or not to use `Manged Service Identity`. Currently, `true` is required | `yes` | 
+| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TACOS server will be used for the name instead | `no` |
+| `subscriptionId` | The Azure subscription ID where the `Azure Key Vault` has been created | `yes` | 
 | `vaultUri` | The URI for the `Azure Key Vault` where you want to store or retrieve your credentials | `yes` |
 
 The following `Azure Key Vault Access Policies` are required to be given to the `Managed Service Identity` for it to leverage `terracreds`:
@@ -242,6 +304,28 @@ secret_permissions = [
 ```
 > Since `Azure Key Vault` doesn't support the period character in a secret name a helper function will replace any periods with dashes so they can be successfully stored. This means a `terraform` API token name that would usually be `app.terraform.io` will become `app-terraform-io`
 
+### Google Secret Manager
+> New in version `2.1.0`
+
+In order to leverage `terracreds` to manage secrets in `Google Secret Manager` the following block needs to be provided in the configuration file:
+```yaml
+gcp:
+  projectId: my-gcp-project
+  secretId: my-secret-name
+```
+
+The configuration can be generated via `terracreds` by running:
+```bash
+terracreds config gcp --project-id 'my-gcp-project' --secret-id 'my-secret-name'
+```
+
+| Value | Description | Required |
+| ----- | ----------- | -------- |
+| `projectId` | The name of the `GCP` project ID where the `Secret Manager` API has been enabled | `yes` |
+| `secretId` | The name of the secret ID | `no` |
+
+The `Google IAM` role `secretmanager.admin` is suggested in order to fully manage the secrets with `terracreds`
+
 ### HashiCorp Vault
 In order to leverage `terracreds` to manage secrets in `HashiCorp Vault` the following block needs to be provided in the configuration file:
 ```yaml
@@ -253,20 +337,46 @@ hcvault:
   vaultUri: http://localhost:8200
 ```
 
+The configuration can be generated via `terracreds` by running:
+```bash
+terracreds config hashicorp \ 
+  --environment-token-name 'HASHI_TOKEN' \
+  --key-vault-path 'kv' \
+  --secret-name 'my-secret-name' \
+  --secret-path 'tfe' \
+  --vault-uri 'http://localhost:8200"
+```
+
 | Value | Description | Required |
 | ----- | ----------- | -------- |
 | `environmentTokenName` | The name of the environment variable that contains the token value to authenticate with `HashiCorp Vault` | `yes` |
 | `keyVaultPath` | The path to the `Key Vault` object within the vault | `yes` |
-| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TFC\TFE server will be used for the name instead | `no` |
+| `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TACOS server will be used for the name instead | `no` |
 | `secretPath` | The path of the secret within `HashiCorp Vault` | `yes` |
 | `vaultUri` | The URI for the `HashiCorp Vault` instance | `yes` |
 
 ## Protection
-In order to add some protection `terracreds` adds a username to the credential object to secrets stored in the local operating system, and checks to ensure that the user requesting access to the token is the same user as the token's creator. This means that only the user account used to create the token can view the token from `terracreds` which ensures that the token can only be read by the account used to create it. Any attempt to access or modify this token from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts
+In order to add some protection `terracreds` adds a username to the credential object stored in the local operating system, and checks to ensure that the user requesting access to the secret is the same user as the secret's creator.  
+
+Any attempt to access or modify this secret from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts
 
 ## Logging
-Wherever either binary is stored `terracreds` or `terraform-credential-terracreds` a `config.yaml` file is generated on first launch of the binary. Currently, this configuration file only enables/disables logging and sets the log path. If logging is enabled you'll find the log named `terracreds.log` at the provided path 
->It's important to note that you'll have two configuration files due to Terraform requiring that the credential helper have a very specific binary name, so when troubleshooting credential issues with Terraform remember to setup the configuration file in the `%APPDATA%\terraform.d\plugins` directory for Windows and `$HOME/.terraform.d/plugins` directory for macOS and Linux
+> New in version `2.1.0`
+
+By default `terracreds` will generate a configuration file in the same location where the `terracreds` binary was first run. This can now be overridden by setting an environment variable that sets the path to the desired location of the configuration file:
+
+For Linux/macOS:
+```bash
+export TC_CONFIG_PATH=/home/username/
+```
+
+For Windows:
+```powershell
+$env:TC_CONFIG_PATH="C:\Temp\"
+```
+> Please, take note of the trailing slash!
+
+To persist this change you can set this variables either in `.bashrc` for Linux/macOS or setup a PowerShell profile for Windows.
 
 To enable logging for Windows setup the `config.yaml` as follows:
 ```yaml
@@ -282,23 +392,37 @@ logging:
   path: /home/username/
 ```
 
-The log is helpful in understanding if an object was found, deleted, updated or added, and will be found at the path defined in the configuration file as `terracreds.log`
+You can also use `terracreds` to configure logging:
+```bash
+terracreds config logging --path '/home/username/' --enabled
+```
 
-In addition all error messages returned by the underlying libraries will be logged when logging is enabled and an error is encountered
+The log is helpful in understanding if an object was found, deleted, updated or added, and will be found at the path defined in the configuration file as `terracreds.log`.
 
-## Troubleshooting Linux
+In addition all error messages returned by the underlying libraries will be logged when logging is enabled and an error is encountered.
+
+## Troubleshooting
+
+### Known Issues
+When you enable `terracreds` as a credential helper Terraform will begin using it for all authentication regardless of the destination server. This means that when you try to install/download providers or modules from the public Terraform registry `https://registry.terraform.io/`, or any other public registry, Terraform will try to authenticate against the server using `terracreds`. If there's no credential in the vault found for that server it will error out.
+
+To work around this issue you'll need to set a dummy value for any public registries. Run this command for each public repo that Terraform will need to access. In this example we're using `registry.terraform.io` so be sure to replace it with the correct server value if the one you require is different:
+```bash
+terracreds create -n registry.terraform.io -v dummy_token
+```
+
+### Linux
 If you are having trouble viewing, deleting, or saving credentials on Linux systems using `gnome-keyring` you must ensure that you have unlocked the collection using `gnome-keyring-daemon --unlock` otherwise you will see the following error message in the logs:
 
 ```txt
 ERROR: <TIMESTAMP> - failed to unlock correct collection '/org/freedesktop/secrets/collection/login'
 ```
 
-If the daemon has unlocked the collection but you're still getting prompted for credentials -- 
-check to make sure that only a single instance of the daemon is running:
+If the daemon has unlocked the collection but you're still getting prompted for credentials check to make sure that only a single instance of the daemon is running:
 
 ```bash
 ps -ef | grep gnome-keyring
 ```
 
 If more than one daemon is running, take note of the pid, and use `kill` to terminate the additional daemon. Try your previous command again
-and it should now be working
+and it should now be working.

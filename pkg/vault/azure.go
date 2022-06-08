@@ -4,31 +4,30 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
-	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/tonedefdev/terracreds/pkg/helpers"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 )
 
 type AzureKeyVault struct {
-	SecretName string
-	UseMSI     bool
-	VaultUri   string
+	SecretName     string
+	SubscriptionId string
+	VaultUri       string
 }
 
-// getVaultClientMSI returns a keyvault.BaseClient with an MSI authorizer for an Azure Key Vault resource
-func getVaultClientMSI() keyvault.BaseClient {
-	vaultClient := keyvault.New()
-	msiConfig := auth.NewMSIConfig()
-	msiConfig.Resource = "https://vault.azure.net"
-
-	authorizer, err := msiConfig.Authorizer()
+// getDefaultAzureClient returns a pointer to an azsecrets.Client using the default
+// authorization scheme for azidentity
+func getDefaultAzureClient(akv *AzureKeyVault) (*azsecrets.Client, error) {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		helpers.CheckError(err)
+		return nil, err
 	}
 
-	vaultClient.Authorizer = authorizer
-	return vaultClient
+	vaultClient, err := azsecrets.NewClient(akv.VaultUri, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return vaultClient, err
 }
 
 // formatSecretName replaces the periods from the hostname with dashes
@@ -41,34 +40,73 @@ func formatSecretName(secretName string) string {
 // Create stores a secret in an Azure Key Vault
 func (akv *AzureKeyVault) Create(secretValue string, method string) error {
 	ctx := context.Background()
-	client := getVaultClientMSI()
+	client, err := getDefaultAzureClient(akv)
+	if err != nil {
+		return err
+	}
 
-	secretParams := keyvault.SecretSetParameters{
-		ContentType: to.StringPtr("password"),
-		Value:       &secretValue,
+	content := "password"
+	options := azsecrets.SetSecretOptions{
+		ContentType: &content,
 	}
 
 	secret := formatSecretName(akv.SecretName)
-	_, err := client.SetSecret(ctx, akv.VaultUri, secret, secretParams)
+	_, err = client.SetSecret(ctx, secret, secretValue, &options)
 	return err
 }
 
 // Delete removes a secret stored in an Azure Key Vault
 func (akv *AzureKeyVault) Delete() error {
 	ctx := context.Background()
-	client := getVaultClientMSI()
+	client, err := getDefaultAzureClient(akv)
+	if err != nil {
+		return err
+	}
 
+	options := azsecrets.BeginDeleteSecretOptions{}
 	secret := formatSecretName(akv.SecretName)
-	_, err := client.DeleteSecret(ctx, akv.VaultUri, secret)
+
+	_, err = client.BeginDeleteSecret(ctx, secret, &options)
 	return err
 }
 
 // Get retrieves a secrete stored in an Azure Key Vault
 func (akv *AzureKeyVault) Get() ([]byte, error) {
 	ctx := context.Background()
-	client := getVaultClientMSI()
+	client, err := getDefaultAzureClient(akv)
+	if err != nil {
+		return nil, err
+	}
 
+	options := azsecrets.GetSecretOptions{}
 	secret := formatSecretName(akv.SecretName)
-	get, err := client.GetSecret(ctx, akv.VaultUri, secret, "")
+
+	get, err := client.GetSecret(ctx, secret, &options)
+	if err != nil {
+		return nil, err
+	}
 	return []byte(*get.Value), err
+}
+
+func (akv *AzureKeyVault) List(secretNames []string) ([]string, error) {
+	var secretValues []string
+	ctx := context.Background()
+	client, err := getDefaultAzureClient(akv)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, secret := range secretNames {
+		options := azsecrets.GetSecretOptions{}
+		secret := formatSecretName(secret)
+
+		get, err := client.GetSecret(ctx, secret, &options)
+		if err != nil {
+			return nil, err
+		}
+
+		secretValues = append(secretValues, *get.Value)
+	}
+
+	return secretValues, nil
 }

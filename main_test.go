@@ -11,7 +11,6 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	api "github.com/tonedefdev/terracreds/api"
 	helpers "github.com/tonedefdev/terracreds/pkg/helpers"
 )
 
@@ -65,9 +64,13 @@ func TestGetBinaryPath(t *testing.T) {
 }
 
 func TestCreateConfigFile(t *testing.T) {
-	var cfg api.Config
-	helpers.CreateConfigFile()
-	helpers.LoadConfig(&cfg)
+	cfgPath := fmt.Sprintf("%s\\config.yaml", t.TempDir())
+
+	err := helpers.CreateConfigFile(cfgPath)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+
 	if cfg.Logging.Enabled != false {
 		t.Errorf("Expected logging enabled 'false' got 'true'")
 	} else {
@@ -76,9 +79,17 @@ func TestCreateConfigFile(t *testing.T) {
 }
 
 func TestLoadConfig(t *testing.T) {
-	var cfg api.Config
-	helpers.CreateConfigFile()
-	helpers.LoadConfig(&cfg)
+	cfgPath := fmt.Sprintf("%s\\config.yaml", t.TempDir())
+	err := helpers.CreateConfigFile(cfgPath)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+
+	err = helpers.LoadConfig(cfgPath, &cfg)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+
 	if cfg.Logging.Enabled != false {
 		t.Errorf("Expected logging enabled 'false' got 'true'")
 	} else {
@@ -91,26 +102,25 @@ func TestGenerateTerracreds(t *testing.T) {
 	path := t.TempDir()
 	tfUser := path + "\\terraform.d"
 	helpers.NewDirectory(tfUser)
-	helpers.GenerateTerracreds(c)
+	helpers.GenerateTerraCreds(c, version, "yes")
 }
 
 func TestTerracreds(t *testing.T) {
-	var cfg api.Config
 	const hostname = "terracreds.test.io"
 	const apiToken = "9ZWRa0Ge0iQCtA.atlasv1.HpZAd8426rHFskeEFo3AzimnkfR1ldYy69zz0op0NJZ79et8nrgjw3lQfi0FyJ1o8iw"
 	const command = "delete"
 
-	provider := returnProvider(runtime.GOOS)
-	vaultProvider := returnVaultProvider(&cfg, hostname)
+	terraCreds := NewTerraCreds(runtime.GOOS)
+	terraVault := NewTerraVault(&cfg, hostname)
 
 	user, err := user.Current()
 	helpers.CheckError(err)
 
-	Terracreds.Create(provider, cfg, hostname, apiToken, user, vaultProvider)
-	token, err := Terracreds.Get(provider, cfg, hostname, user, vaultProvider)
+	terraCreds.Create(cfg, hostname, apiToken, user, terraVault)
+	token, err := terraCreds.Get(cfg, hostname, user, terraVault)
 	if err != nil {
 		helpers.CheckError(err)
 	}
 	fmt.Println(string(token))
-	Terracreds.Delete(provider, cfg, command, hostname, user, vaultProvider)
+	terraCreds.Delete(cfg, command, hostname, user, terraVault)
 }

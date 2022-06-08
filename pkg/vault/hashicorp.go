@@ -83,3 +83,31 @@ func (hc *HashiVault) Get() ([]byte, error) {
 
 	return []byte(value), err
 }
+
+func (hc *HashiVault) List(secretNames []string) ([]string, error) {
+	var secretValues []string
+	client := hc.newHashiVaultClient()
+
+	kvPath := fmt.Sprintf("%s/data/%s", hc.KeyVaultPath, hc.SecretPath)
+	secret, err := client.Logical().Read(kvPath)
+	if secret == nil {
+		return nil, err
+	}
+
+	data, ok := secret.Data["data"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("data type assertion failed: %T %#v", secret.Data["data"], secret.Data["data"])
+	}
+
+	for _, secret := range secretNames {
+		key := secret
+		value, ok := data[key].(string)
+		if !ok {
+			return nil, fmt.Errorf("value type assertion failed: %T %#v", data[key], data[key])
+		}
+
+		secretValues = append(secretValues, value)
+	}
+
+	return secretValues, nil
+}

@@ -1,7 +1,7 @@
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_resource_group" "rg" {
-  count    = var.test_az ? 1 : 0
+  count    = var.keyvault_only || var.test_az ? 1 : 0
   name     = var.rg_name
   location = var.location
 }
@@ -74,7 +74,7 @@ resource "azurerm_windows_virtual_machine" "vm" {
 }
 
 resource "azurerm_key_vault" "keyvault" {
-  count                       = var.test_az ? 1 : 0
+  count                       = var.keyvault_only || var.test_az ? 1 : 0
   name                        = var.keyvault_name
   location                    = azurerm_resource_group.rg[0].location
   resource_group_name         = azurerm_resource_group.rg[0].name
@@ -87,7 +87,7 @@ resource "azurerm_key_vault" "keyvault" {
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = azurerm_windows_virtual_machine.vm[count.index].identity[count.index].principal_id
+    object_id = var.keyvault_only ? var.object_id : azurerm_windows_virtual_machine.vm[count.index].identity[count.index].principal_id
 
     secret_permissions = [
       "Get",

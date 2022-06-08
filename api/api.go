@@ -19,11 +19,20 @@ type Azure struct {
 	// if omitted Terracreds will use the hostname value instead
 	SecretName string `yaml:"secretName,omitempty"`
 
-	// UseMSI (Required) A flag to indicate if the Managed Identity of the Azure VM should be used for authentication
-	UseMSI bool `yaml:"useMSI,omitempty"`
+	// SubscriptionId (Required) The subscription ID where the target Key Vault has been created
+	SubscriptionId string `yaml:"subscriptionId,omitempty"`
 
 	// VaultUri (Required) The FQDN of the Azure Key Vault resource
 	VaultUri string `yaml:"vaultUri,omitempty"`
+}
+
+// GCP is the configuration structure for the Goocle Cloud Secret Manager provider
+type GCP struct {
+	// ProjectId (Required) The name of the GCP project where the Secret Manager API has been enabled
+	ProjectId string `yaml:"projectId,omitempty"`
+
+	// SecretId (Optional) The name of the secret to create
+	SecretId string `yaml:"secretId,omitempty"`
 }
 
 // HCVault is the configuration structure for the Hashicorp Vault provider
@@ -48,10 +57,12 @@ type HCVault struct {
 
 // Config struct for terracreds custom configuration
 type Config struct {
-	Logging    Logging `yaml:"logging"`
-	Aws        Aws     `yaml:"aws,omitempty"`
-	Azure      Azure   `yaml:"azure,omitempty"`
-	HashiVault HCVault `yaml:"hcvault,omitempty"`
+	Logging    Logging  `yaml:"logging"`
+	Aws        Aws      `yaml:"aws,omitempty"`
+	Azure      Azure    `yaml:"azure,omitempty"`
+	HashiVault HCVault  `yaml:"hcvault,omitempty"`
+	GCP        GCP      `yaml:"gcp,omitempty"`
+	Secrets    []string `yaml:"secrets,omitempty"`
 }
 
 // Logging struct defines the parameters for logging
