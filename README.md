@@ -3,7 +3,7 @@
 <img src="https://github.com/tonedefdev/terracreds/blob/main/img/terracreds.png?raw=true" align="right" width="350" height="350">
 
 # Terracreds
-A credential helper for Terraform Cloud or Enterprise Software, or to store any other secrets, securely in the operating system's credential vault or through a third party vault provider. No longer keep secrets in a plain text configuration file!
+A credential helper for Terraform Automation and Collaboration Software, or to store any other secrets, securely in the operating system's credential vault or through a third party vault provider. No longer keep secrets in a plain text configuration file!
 
 We all know storing secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to help enable stronger security practices.
 
@@ -18,7 +18,7 @@ We all know storing secrets in plain text can pose major security threats, and T
 - [x] Google Secret Manager 
 - [x] HashiCorp Vault
 
-#### Currently Supported Terraform Cloud or Enterprise Software:
+#### Currently Supported Terraform Automation and Collaboration Software:
 - [x] env0
 - [x] Scalr
 - [x] Spacelift
