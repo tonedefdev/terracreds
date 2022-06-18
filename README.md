@@ -26,7 +26,7 @@ We all know storing secrets in plain text can pose major security threats, and T
 - [x] Terraform Enterprise
 
 ## Quick Links
-- InstallConfigure
+- Install & Configure
   - [Windows](https://github.com/tonedefdev/terracreds#windows-install-via-chocolatey)
   - [macOS](https://github.com/tonedefdev/terracreds#macos-install)
   - [Linux](https://github.com/tonedefdev/terracreds#linux-install)
