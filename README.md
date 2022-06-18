@@ -223,6 +223,13 @@ There's a helper flag `--as-tfvars` which will return the secret values formatte
 
 For instance on Linux/macOS you can simply call `eval` to evaluate the output to then convert the returned values into variables in your current shell.
 
+Also, by default, `terracreds` will convert any dashes `[-]` in a secret name with underscores `[_]` since this is the typical variable naming style convention in Terraform. However, you can override that behavior by passing in an override flag with any string value you'd prefer to use:
+```bash
+terracreds list --as-tfvars --override-replace-string -
+```
+
+The above example would maintain the dash `[-]` in the outuput of the formatted TF_VARS instead of replacing it by the default underscore `[_]`
+
 Additionally, you can use `--as-json` to return the secret names and values as a JSON string. This is printed to standard output so you can make use of shell pipes and other commands to ingest the data.
 
 ## Setting Up a Vault Provider
@@ -394,7 +401,17 @@ The log is helpful in understanding if an object was found, deleted, updated or 
 
 In addition all error messages returned by the underlying libraries will be logged when logging is enabled and an error is encountered.
 
-## Troubleshooting Linux
+## Troubleshooting
+
+### Known Issues
+When you enable `terracreds` as a credential helper Terraform will begin using it for all authentication regardless of the destination server. This means that when you try to install/download providers or modules from the public Terraform registry `https://registry.terraform.io/`, or any other public registry, Terraform will try to authenticate against the server using `terracreds`. If there's no credential in the vault found for that server it will error out.
+
+To work around this issue you'll need to set a dummy value for any public registries. Run this command for each public repo that Terraform will need to access. In this example we're using `registry.terraform.io` so be sure to replace it with the correct server value if the one you require is different:
+```bash
+terracreds create -n registry.terraform.io -v dummy_token
+```
+
+### Linux
 If you are having trouble viewing, deleting, or saving credentials on Linux systems using `gnome-keyring` you must ensure that you have unlocked the collection using `gnome-keyring-daemon --unlock` otherwise you will see the following error message in the logs:
 
 ```txt
