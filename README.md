@@ -3,7 +3,7 @@
 <img src="https://github.com/tonedefdev/terracreds/blob/main/img/terracreds.png?raw=true" align="right" width="350" height="350">
 
 # Terracreds
-A credential helper for Terraform Automation and Collaboration Software, or to store any other secrets, securely in the operating system's credential vault or through a third party vault provider. No longer keep secrets in a plain text configuration file!
+A credential helper for Terraform Cloud or Enterprise Software, or to store any other secrets, securely in the operating system's credential vault or through a third party vault provider. No longer keep secrets in a plain text configuration file!
 
 We all know storing secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to help enable stronger security practices.
 
@@ -18,12 +18,39 @@ We all know storing secrets in plain text can pose major security threats, and T
 - [x] Google Secret Manager 
 - [x] HashiCorp Vault
 
-#### Currently Supported Terraform Automation and Collaboration Software:
+#### Currently Supported Terraform Cloud or Enterprise Software:
 - [x] env0
 - [x] Scalr
 - [x] Spacelift
 - [x] Terraform Cloud
 - [x] Terraform Enterprise
+
+## Quick Links
+- InstallConfigure
+  - [Windows](https://github.com/tonedefdev/terracreds#windows-install-via-chocolatey)
+  - [macOS](https://github.com/tonedefdev/terracreds#macos-install)
+  - [Linux](https://github.com/tonedefdev/terracreds#linux-install)
+  - [From Source](https://github.com/tonedefdev/terracreds#install-from-source)
+  - [Upgrading](https://github.com/tonedefdev/terracreds#upgrading)
+  - [Initial Configuration](https://github.com/tonedefdev/terracreds#initial-configuration)
+- Usage
+  - [Storing](https://github.com/tonedefdev/terracreds#storing-credentials)
+  - [Verifying](https://github.com/tonedefdev/terracreds#storing-credentials)
+  - [Updating](https://github.com/tonedefdev/terracreds#updating-credentials)
+  - [Forgetting](https://github.com/tonedefdev/terracreds#forgetting-credentials)
+  - [Listing](https://github.com/tonedefdev/terracreds#list-credentials)
+- Vault Providers
+  - [General Setup](https://github.com/tonedefdev/terracreds#setting-up-a-vault-provider)
+  - [AWS Secrets Manager](https://github.com/tonedefdev/terracreds#aws-secrets-manager)
+  - [Azure Key Vault](https://github.com/tonedefdev/terracreds#azure-key-vault)
+  - [Google Secret Manager](https://github.com/tonedefdev/terracreds#google-secret-manager)
+  - [HashiCorp Vault](https://github.com/tonedefdev/terracreds#hashicorp-vault)
+- Miscellaneous
+  - [Protection](https://github.com/tonedefdev/terracreds#protection)
+  - [Logging](https://github.com/tonedefdev/terracreds#logging)
+- Troubleshooting
+  - [Known Issues](https://github.com/tonedefdev/terracreds#known-issues)
+  - [Linux](https://github.com/tonedefdev/terracreds#linux)
 
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
@@ -125,16 +152,16 @@ credentials_helper "terracreds" {
 }
 ```
 
-Once you have moved all of your tokens from this file to the `Windows Credential Manager` or `KeyChain` via `terracreds` you can remove the tokens from the file. If you don't remove the tokens, and you add the `credentials_helper` block to this file, Terraform will still use the tokens instead of `terracreds` to retreive the tokens, so be sure to remove your tokens from this file once you have used the `create` or `terraform login` command to create the credentials in `terracreds` so you can actually leverage the credential helper.
+Once you have moved all of your tokens from this file to your preferred vault provider via `terracreds` you can remove the tokens from the file. If you don't remove them, but you add the `credentials_helper` block to this file, Terraform will still use the token from this file instead of from the vault configured with `terracreds`.
 
 ## Storing Credentials
-For Terraform to properly use the credentials stored in your credential manager they need to be stored a specific way. The name of the credential object must be the domain name of the Terraform Automation and Collaboration server. For instance `app.terraform.io` which is the default name `terraform login` will leverage.
+For Terraform to properly use the credentials stored in your credential manager they need to be stored a specific way. The name of the credential object must be the domain name of the Terraform Cloud or Enterprise server. For instance `app.terraform.io` which is the default name `terraform login` will leverage.
 
-The value for the password will correspond to the API token associated for that specific Terraform Automation and Collaboration server.
+The value for the password will correspond to the API token associated for that specific Terraform Cloud or Enterprise server.
 
-The entire process is kicked off directly from the Terraform CLI. Run `terraform login` to start the login process with Terraform Cloud. If you're using Terraform Enterprise or another Terraform Automation and Collaboration Software solution you'll need to pass the hostname of the server as an additional argument `terraform login my.tacos.com`.
+The entire process is kicked off directly from the Terraform CLI. Run `terraform login` to start the login process with Terraform Cloud. If you're using Terraform Enterprise you'll need to pass the hostname of the server as an additional argument `terraform login my.tfe.com`.
 
-You'll be sent to your Terraform Automation and Collaboration Software instance where you'll be requested to sign-in with your account, and then sent to create an API token. Create the API token with any name you'd like for this example we'll use `terracreds`.
+You'll be sent to your Terraform Cloud or Enterprise Software instance where you'll be requested to sign-in with your account, and then sent to create an API token. Create the API token with any name you'd like for this example we'll use `terracreds`.
 
 Once completed, copy the generated token, paste it into your terminal, and then hit enter. Terraform will then leverage `terracreds` to store the credentials in the operating system's credential manager. If all went well you should receive the following success message:
 
@@ -148,7 +175,7 @@ In the background `terraform` calls `terracreds` as its credential helper, `terr
 terraform-credentials-terracreds store app.terraform.io
 ```
 
-If you prefer, you can also perform creating credentials manually by running:
+If you prefer, you can also create credentials manually by running:
 ```bash
 terracreds create -n app.terraform.io -v <TACOS_API_TOKEN>
 ```
@@ -233,7 +260,7 @@ The above example would maintain the dash `[-]` in the outuput of the formatted 
 Additionally, you can use `--as-json` to return the secret names and values as a JSON string. This is printed to standard output so you can make use of shell pipes and other commands to ingest the data.
 
 ## Setting Up a Vault Provider
-> You can reference example configs in our [repo](https://github.com/tonedefdev/terracreds/blob/main/config.yaml) plus we have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation.
+> We have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation.
 
 > New in version `2.1.0`
 
