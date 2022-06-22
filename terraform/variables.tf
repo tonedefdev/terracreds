@@ -12,7 +12,7 @@ variable "location" {
 
 variable "keyvault_only" {
   type        = bool
-  default     = true
+  default     = false
   description = "Create only the Azure Key Vault resources and not any VMs"
 }
 
