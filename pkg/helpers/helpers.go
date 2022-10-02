@@ -34,7 +34,7 @@ func CopyTerraCreds(dest string) error {
 	}
 	defer from.Close()
 
-	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0755)
+	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func GetBinaryPath(binary string, os string) string {
 func NewDirectory(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			err := os.Mkdir(path, 0755)
+			err := os.Mkdir(path, 0644)
 			if err != nil {
 				return err
 			}
