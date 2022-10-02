@@ -647,7 +647,7 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
-						fmt.Fprintf(color.Output, "%s: No list command was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
+						fmt.Fprintf(color.Output, "%s: No list command was specified. Use 'terracreds list -h' to print help info\n", color.RedString("ERROR"))
 						return nil
 					}
 

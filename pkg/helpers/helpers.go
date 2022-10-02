@@ -136,7 +136,7 @@ func WriteToFile(filename string, data string) error {
 // WriteToLog will create a log if it doesn't exist and then append
 // messages to the log
 func WriteToLog(path string, data string, level string) error {
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func CreateConfigFile(path string) error {
 			}
 
 			bytes, err := yaml.Marshal(&cfgFile)
-			err = ioutil.WriteFile(path, bytes, 0755)
+			err = ioutil.WriteFile(path, bytes, 0644)
 			if err != nil {
 				return err
 			}
@@ -191,7 +191,7 @@ func WriteConfig(path string, cfg *api.Config) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(path, bytes, 0755)
+	err = ioutil.WriteFile(path, bytes, 0644)
 	if err != nil {
 		return err
 	}
