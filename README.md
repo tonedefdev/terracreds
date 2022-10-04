@@ -405,9 +405,8 @@ export TC_CONFIG_PATH=/home/username/
 
 For Windows:
 ```powershell
-$env:TC_CONFIG_PATH="C:\Temp\"
+$env:TC_CONFIG_PATH="C:\Temp"
 ```
-> Please, take note of the trailing slash!
 
 To persist this change you can set this variables either in `.bashrc` for Linux/macOS or setup a PowerShell profile for Windows.
 
@@ -415,19 +414,19 @@ To enable logging for Windows setup the `config.yaml` as follows:
 ```yaml
 logging:
   enabled: true
-  path: C:\Temp\
+  path: C:\Temp
 ```
 
-To enable logging for macOS and Linux:
+To enable logging for macOS and Linux to a directory called `.terracreds` in the user's home profile:
 ```yaml
 logging:
   enabled: true
-  path: /home/username/
+  path: ~/.terracreds
 ```
 
 You can also use `terracreds` to configure logging:
 ```bash
-terracreds config logging --path '/home/username/' --enabled
+terracreds config logging --path '~/.terracreds' --enabled
 ```
 
 The log is helpful in understanding if an object was found, deleted, updated or added, and will be found at the path defined in the configuration file as `terracreds.log`.
