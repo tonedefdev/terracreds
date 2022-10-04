@@ -6,11 +6,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/fatih/color"
+	"github.com/mitchellh/go-homedir"
 	"github.com/tonedefdev/terracreds/api"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v2"
@@ -32,7 +34,7 @@ func CopyTerraCreds(dest string) error {
 	}
 	defer from.Close()
 
-	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0755)
+	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
@@ -101,7 +103,7 @@ func GetBinaryPath(binary string, os string) string {
 func NewDirectory(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			err := os.Mkdir(path, 0755)
+			err := os.Mkdir(path, 0644)
 			if err != nil {
 				return err
 			}
@@ -201,7 +203,12 @@ func WriteConfig(path string, cfg *api.Config) error {
 // Logging forms the path and writes to log if enabled
 func Logging(cfg api.Config, msg string, level string) {
 	if cfg.Logging.Enabled == true {
-		logPath := cfg.Logging.Path + "terracreds.log"
+		absolutePath, err := homedir.Expand(cfg.Logging.Path)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		logPath := filepath.Join(absolutePath, "terracreds.log")
 		WriteToLog(logPath, msg, LogLevel(level))
 	}
 }
@@ -230,17 +237,17 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) error {
 	var binary string
 
 	if runtime.GOOS == "windows" {
-		userProfile := os.Getenv("USERPROFILE")
-		cliConfig = userProfile + "\\AppData\\Roaming\\terraform.rc"
-		tfPlugins = userProfile + "\\AppData\\Roaming\\terraform.d\\plugins"
-		binary = fmt.Sprintf("%s\\terraform-credentials-terracreds.exe", tfPlugins)
+		userProfile := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming")
+		cliConfig = filepath.Join(userProfile, "terraform.rc")
+		tfPlugins = filepath.Join(userProfile, "terraform.d", "plugins")
+		binary = filepath.Join(tfPlugins, "terraform-credentials-terracreds.exe")
 	}
 
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
-		cliConfig = userProfile + "/.terraform.d/.terraformrc"
-		tfPlugins = userProfile + "/.terraform.d/plugins"
-		binary = fmt.Sprintf("%s/terraform-credentials-terracreds", tfPlugins)
+		cliConfig = filepath.Join(userProfile, ".terraformrc")
+		tfPlugins = filepath.Join(userProfile, ".terraform.d", "plugins")
+		binary = filepath.Join(tfPlugins, "terraform-credentials-terracreds")
 	}
 
 	err := NewDirectory(tfPlugins)

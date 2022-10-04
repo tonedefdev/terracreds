@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -20,7 +21,7 @@ import (
 
 const (
 	cfgName = "config.yaml"
-	version = "2.1.0"
+	version = "2.1.2"
 )
 
 var (
@@ -123,10 +124,10 @@ func NewTerraVault(cfg *api.Config, hostname string) vault.TerraVault {
 func main() {
 	fileEnvVar := os.Getenv("TC_CONFIG_PATH")
 	if fileEnvVar != "" {
-		configFilePath = fileEnvVar + cfgName
+		configFilePath = filepath.Join(fileEnvVar, cfgName)
 	} else {
 		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
-		configFilePath = binPath + cfgName
+		configFilePath = filepath.Join(binPath, cfgName)
 	}
 
 	err := helpers.CreateConfigFile(configFilePath)
@@ -148,7 +149,7 @@ func main() {
 	app := &cli.App{
 		Name:      "terracreds",
 		Usage:     "a credential helper for Terraform Automation and Collaboration Software (TACOS) that leverages your vault provider of choice for securely storing API tokens or other secrets.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
-		UsageText: "Store Terraform Automation and Collaboration Software API tokens by running 'terraform login' or manually store them using 'terracreds create -n app.terraform.io -v myAPItoken'",
+		UsageText: "Store Terraform Enterprise or Cloud API tokens by running 'terraform login' or manually store any secret you choose with 'terracreds create -n mySuperSecret -v mySuperSafePassword'",
 		Version:   version,
 		Commands: []*cli.Command{
 			{
@@ -468,7 +469,7 @@ func main() {
 			{
 				Name:    "create",
 				Aliases: []string{"update"},
-				Usage:   "Manually create or update a credential object in the vault provider of your choice that contains either the Terraform Automation and Collaboration Software API's authorization token or another secret",
+				Usage:   "Manually create or update a credential object in the vault provider of your choice that contains either the Terraform Enterprise or Cloud API token or any other type of secret",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "name",
@@ -505,7 +506,7 @@ func main() {
 			},
 			{
 				Name:  "delete",
-				Usage: "Delete a stored credential in the vault provider of your choice",
+				Usage: "Delete a stored credential in the vault",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "name",
@@ -544,7 +545,7 @@ func main() {
 			},
 			{
 				Name:  "forget",
-				Usage: "(Terraform Only) Forget a stored credential in your vault provider of choice when 'terraform logout' has been called",
+				Usage: "(Terraform Only) Forget a stored credential in your vault when 'terraform logout' has been called",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No secret name was specified. Use 'terracreds forget -h' for help info\n", color.RedString("ERROR"))
@@ -583,7 +584,7 @@ func main() {
 			},
 			{
 				Name:  "get",
-				Usage: "Get the credential object value by passing the hostname of the Terraform Automation and Collaboration Software server's hostname or the name of the secret as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
+				Usage: "Get the credential object value by passing the server's hostname (Terraform backend default behavior) or the name of the secret as an argument. The credential is returned as a JSON object and formatted for consumption by Terraform",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) > 2 {
 						user, err := user.Current()
@@ -628,7 +629,7 @@ func main() {
 					&cli.BoolFlag{
 						Name:     "as-tfvars",
 						Value:    false,
-						Usage:    "Exports the secret keys and values as 'TF_VARS_secret_key=secret_value' for the given operating system",
+						Usage:    "Prints the secret keys and values as 'TF_VARS_secret_key=secret_value'",
 						Required: false,
 					},
 					&cli.BoolFlag{
@@ -718,7 +719,7 @@ func main() {
 			},
 			{
 				Name:  "store",
-				Usage: "(Terraform Only) Store or update a Terraform Automation and Collaboration Software API token in your vault provider of choice when 'terraform login' has been called",
+				Usage: "(Terraform Only) Store or update a Terraform Enterprise or Cloud API token in your vault provider of choice when 'terraform login' has been called",
 				Action: func(c *cli.Context) error {
 					if len(os.Args) == 2 {
 						fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
