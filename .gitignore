@@ -20,3 +20,4 @@ terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terracreds
 terracreds.json
+config.yaml

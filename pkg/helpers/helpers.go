@@ -245,7 +245,7 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) error {
 
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
-		cliConfig = filepath.Join(userProfile, ".terraform.d", ".terraformrc")
+		cliConfig = filepath.Join(userProfile, ".terraformrc")
 		tfPlugins = filepath.Join(userProfile, ".terraform.d", "plugins")
 		binary = filepath.Join(tfPlugins, "terraform-credentials-terracreds")
 	}
