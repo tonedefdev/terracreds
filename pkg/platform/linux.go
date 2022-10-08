@@ -19,7 +19,7 @@ import (
 type Linux struct{}
 
 // Create stores or updates a Terraform API token in Gnome Keyring or an external vault provider
-func (l *Linux) Create(cfg api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error {
+func (l *Linux) Create(cfg *api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
 
@@ -80,7 +80,7 @@ func (l *Linux) Create(cfg api.Config, hostname string, token any, user *user.Us
 }
 
 // Delete removes or forgets a Terraform API token in Gnome Keyring or an external vault provider
-func (l *Linux) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
+func (l *Linux) Delete(cfg *api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
 	if vault != nil {
 		err := vault.Delete()
 		if err != nil {
@@ -120,7 +120,7 @@ func (l *Linux) Delete(cfg api.Config, command string, hostname string, user *us
 }
 
 // Get retrieves a Terraform API token in Gnome Keyring or an external vault provider
-func (l *Linux) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
+func (l *Linux) Get(cfg *api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")
@@ -165,7 +165,7 @@ func (l *Linux) Get(cfg api.Config, hostname string, user *user.User, vault vaul
 	return nil, err
 }
 
-func (l *Linux) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
+func (l *Linux) List(c *cli.Context, cfg *api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
 	var secretValues []string
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- user requesting access: %s", string(user.Username))
