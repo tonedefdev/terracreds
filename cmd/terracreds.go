@@ -31,26 +31,6 @@ type TerraCreds interface {
 	List(c *cli.Context, cfg *api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error)
 }
 
-// InitTerraCreds initializes the configuration for Terracreds
-func (cmd *Config) InitTerraCreds(cfgName string, fileEnvVar string) {
-	if fileEnvVar != "" {
-		cmd.ConfigFilePath = filepath.Join(fileEnvVar, cfgName)
-	} else {
-		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
-		cmd.ConfigFilePath = filepath.Join(binPath, cfgName)
-	}
-
-	err := helpers.CreateConfigFile(cmd.ConfigFilePath)
-	if err != nil {
-		helpers.CheckError(err)
-	}
-
-	err = cmd.LoadConfig(cmd.ConfigFilePath)
-	if err != nil {
-		helpers.CheckError(err)
-	}
-}
-
 // CopyTerraCreds will create a copy of the binary to the destination path.
 func CopyTerraCreds(dest string) error {
 	from, err := os.Open(string(os.Args[0]))
@@ -136,6 +116,26 @@ func GetSecretName(cfg *api.Config, hostname string) string {
 		return cfg.HashiVault.SecretName
 	}
 	return hostname
+}
+
+// InitTerraCreds initializes the configuration for Terracreds
+func (cmd *Config) InitTerraCreds() {
+	if cmd.ConfigFileEnvValue != "" {
+		cmd.ConfigFilePath = filepath.Join(cmd.ConfigFileEnvValue, cmd.ConfigFileName)
+	} else {
+		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
+		cmd.ConfigFilePath = filepath.Join(binPath, cmd.ConfigFileName)
+	}
+
+	err := helpers.CreateConfigFile(cmd.ConfigFilePath)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+
+	err = cmd.LoadConfig(cmd.ConfigFilePath)
+	if err != nil {
+		helpers.CheckError(err)
+	}
 }
 
 // LoadConfig loads the config file if it exists
