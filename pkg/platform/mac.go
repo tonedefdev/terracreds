@@ -19,7 +19,7 @@ import (
 type Mac struct{}
 
 // Create stores or updates a Terraform API token in MacOS Keyring
-func (m *Mac) Create(cfg api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error {
+func (m *Mac) Create(cfg *api.Config, hostname string, token any, user *user.User, vault vault.TerraVault) error {
 	var method string
 	method = "Updated"
 
@@ -80,7 +80,7 @@ func (m *Mac) Create(cfg api.Config, hostname string, token any, user *user.User
 }
 
 // Delete removes or forgets a Terraform API token in MacOS Keyring
-func (m *Mac) Delete(cfg api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
+func (m *Mac) Delete(cfg *api.Config, command string, hostname string, user *user.User, vault vault.TerraVault) error {
 	if vault != nil {
 		err := vault.Delete()
 		if err != nil {
@@ -119,7 +119,7 @@ func (m *Mac) Delete(cfg api.Config, command string, hostname string, user *user
 }
 
 // Get retrives a Terraform API token in MacOS Keyring
-func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
+func (m *Mac) Get(cfg *api.Config, hostname string, user *user.User, vault vault.TerraVault) ([]byte, error) {
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- terraform server: %s", hostname)
 		helpers.Logging(cfg, msg, "INFO")
@@ -164,7 +164,7 @@ func (m *Mac) Get(cfg api.Config, hostname string, user *user.User, vault vault.
 	return nil, err
 }
 
-func (m *Mac) List(c *cli.Context, cfg api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
+func (m *Mac) List(c *cli.Context, cfg *api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error) {
 	var secretValues []string
 	if cfg.Logging.Enabled == true {
 		msg := fmt.Sprintf("- user requesting access: %s", string(user.Username))
