@@ -55,7 +55,7 @@ We all know storing secrets in plain text can pose major security threats, and T
 ## Windows Install via Chocolatey
 The fastest way to install `terracreds` on Windows is via our Chocolatey package:
 ```powershell
-choco install terracreds --version "2.1.0" -y
+choco install terracreds -y
 ```
 
 Once installed run the following command to verify `terracreds` was installed properly:
@@ -65,21 +65,27 @@ terracreds -v
 
 To upgrade `terracreds` to the latest version with Chocolatey run the the following command:
 ```powershell
-choco upgrade terracreds --version "2.1.0" -y
+choco upgrade terracreds -y
 ```
 
 ## macOS Install
-We are currently working on a `homebrew` package, however, to install the package simply download our latest release from this repository, 
-extract the package, and then place it in a directory available on `$HOME`.
+We are currently working on a `homebrew` package, however, you can leverage this shell script to install `terracreds`
+
+```sh
+curl https://github.com/tonedefdev/terracreds/releases/download/v2.1.2/terracreds_2.1.2_darwin_amd64.tar.gz -o terracreds_2.1.2_darwin_amd64.tar.gz  && \
+tar -xvf terracreds_2.1.2_darwin_amd64.tar.gz && \
+sudo mv -f terracreds /usr/bin/terracreds && \
+rm -f terracreds_2.1.2_darwin_amd64.tar.gz README.md
+```
 
 ## Linux Install
 You'll need to download the latest binary from our release page and place it anywhere on `$PATH` of your system. You can also copy and run the following commands:
 
 ```bash
-wget https://github.com/tonedefdev/terracreds/releases/download/v2.1.0/terracreds_2.1.0_linux_amd64.tar.gz && \
-tar -xvf terracreds_2.1.0_linux_amd64.tar.gz && \
+wget https://github.com/tonedefdev/terracreds/releases/download/v2.1.2/terracreds_2.1.2_linux_amd64.tar.gz && \
+tar -xvf terracreds_2.1.2_linux_amd64.tar.gz && \
 sudo mv -f terracreds /usr/bin/terracreds && \
-rm -f terracreds_2.1.0_linux_amd64.tar.gz README.md
+rm -f terracreds_2.1.2_linux_amd64.tar.gz README.md
 ```
 
 The `terracreds` Linux implementation uses `gnome-keyring` in conjunction with `gnome-keyring-daemon` 
@@ -399,9 +405,8 @@ export TC_CONFIG_PATH=/home/username/
 
 For Windows:
 ```powershell
-$env:TC_CONFIG_PATH="C:\Temp\"
+$env:TC_CONFIG_PATH="C:\Temp"
 ```
-> Please, take note of the trailing slash!
 
 To persist this change you can set this variables either in `.bashrc` for Linux/macOS or setup a PowerShell profile for Windows.
 
@@ -409,19 +414,19 @@ To enable logging for Windows setup the `config.yaml` as follows:
 ```yaml
 logging:
   enabled: true
-  path: C:\Temp\
+  path: C:\Temp
 ```
 
-To enable logging for macOS and Linux:
+To enable logging for macOS and Linux to a directory called `.terracreds` in the user's home profile:
 ```yaml
 logging:
   enabled: true
-  path: /home/username/
+  path: ~/.terracreds
 ```
 
 You can also use `terracreds` to configure logging:
 ```bash
-terracreds config logging --path '/home/username/' --enabled
+terracreds config logging --path '~/.terracreds' --enabled
 ```
 
 The log is helpful in understanding if an object was found, deleted, updated or added, and will be found at the path defined in the configuration file as `terracreds.log`.
