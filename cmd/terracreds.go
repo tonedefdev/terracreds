@@ -120,19 +120,19 @@ func GetSecretName(cfg *api.Config, hostname string) string {
 
 // InitTerraCreds initializes the configuration for Terracreds
 func (cmd *Config) InitTerraCreds() {
-	if cmd.ConfigFileEnvValue != "" {
-		cmd.ConfigFilePath = filepath.Join(cmd.ConfigFileEnvValue, cmd.ConfigFileName)
+	if cmd.ConfigFile.EnvironmentValue != "" {
+		cmd.ConfigFile.Path = filepath.Join(cmd.ConfigFile.EnvironmentValue, cmd.ConfigFile.Name)
 	} else {
 		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
-		cmd.ConfigFilePath = filepath.Join(binPath, cmd.ConfigFileName)
+		cmd.ConfigFile.Path = filepath.Join(binPath, cmd.ConfigFile.Name)
 	}
 
-	err := helpers.CreateConfigFile(cmd.ConfigFilePath)
+	err := helpers.CreateConfigFile(cmd.ConfigFile.Path)
 	if err != nil {
 		helpers.CheckError(err)
 	}
 
-	err = cmd.LoadConfig(cmd.ConfigFilePath)
+	err = cmd.LoadConfig(cmd.ConfigFile.Path)
 	if err != nil {
 		helpers.CheckError(err)
 	}

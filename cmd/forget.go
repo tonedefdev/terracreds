@@ -30,13 +30,13 @@ func (cmd *Config) newCommandActionForget(c *cli.Context) error {
 		return nil
 	}
 
-	terraVault := cmd.NewTerraVault(c.String("name"))
-	name := GetSecretName(cmd.Cfg, c.String("name"))
+	terraVault := cmd.NewTerraVault(os.Args[2])
+	name := GetSecretName(cmd.Cfg, os.Args[2])
 
 	user, err := user.Current()
 	helpers.CheckError(err)
 
-	err = cmd.TerraCreds.Create(cmd.Cfg, name, c.String("secret"), user, terraVault)
+	err = cmd.TerraCreds.Delete(cmd.Cfg, "delete", name, user, terraVault)
 	if err != nil {
 		helpers.CheckError(err)
 	}

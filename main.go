@@ -10,11 +10,14 @@ import (
 
 func main() {
 	terracreds := &cmd.Config{
-		ConfigFileName:       "config.yaml",
-		ConfigFileEnvValue:   os.Getenv("TC_CONFIG_PATH"),
 		DefaultReplaceString: "_",
 		TerraCreds:           cmd.NewTerraCreds(runtime.GOOS),
 		Version:              "2.1.2",
+
+		ConfigFile: cmd.ConfigFile{
+			EnvironmentValue: os.Getenv("TC_CONFIG_PATH"),
+			Name:             "config.yaml",
+		},
 	}
 
 	terracreds.InitTerraCreds()

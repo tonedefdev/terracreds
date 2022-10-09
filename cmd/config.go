@@ -11,18 +11,23 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Config struct defines the configuration for Terracreds
+// Config struct defines the configuration for the Terracreds CLI application
 type Config struct {
 	Cfg                  *api.Config
-	ConfigFileEnvValue   string
-	ConfigFilePath       string
-	ConfigFileName       string
+	ConfigFile           ConfigFile
 	DefaultReplaceString string
 	TerraCreds           TerraCreds
 	SecretNames          []string
 	Version              string
 
-	confirm string
+	Confirm string
+}
+
+// ConfigFile defines values for the configuration file
+type ConfigFile struct {
+	EnvironmentValue string
+	Path             string
+	Name             string
 }
 
 // NewCommandConfig instantiates the config command
@@ -60,16 +65,16 @@ func (cmd *Config) newCommandActionReset(c *cli.Context) error {
 	if c.Bool("use-local-vault-only") == true {
 		const verbiage = "This will reset the configuration to only use the local operating system's credential vault. Any configuration values for a cloud provider vault will be permanently lost!"
 		fmt.Fprintf(color.Output, "%s: %s\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: ", color.YellowString("WARNING"), verbiage)
-		fmt.Scanln(&cmd.confirm)
+		fmt.Scanln(&cmd.Confirm)
 		fmt.Print("\n")
 
-		if cmd.confirm == "yes" {
+		if cmd.Confirm == "yes" {
 			newCfg := api.Config{
 				Logging: cmd.Cfg.Logging,
 				Secrets: cmd.Cfg.Secrets,
 			}
 
-			err := helpers.WriteConfig(cmd.ConfigFilePath, &newCfg)
+			err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 			if err != nil {
 				helpers.CheckError(err)
 			}
@@ -126,7 +131,7 @@ func (cmd *Config) newCommandActionAws(c *cli.Context) error {
 		Secrets: cmd.Cfg.Secrets,
 	}
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, &newCfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -179,7 +184,7 @@ func (cmd *Config) newCommandActionAzure(c *cli.Context) error {
 		Secrets: cmd.Cfg.Secrets,
 	}
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, &newCfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -225,7 +230,7 @@ func (cmd *Config) newCommandActionGcp(c *cli.Context) error {
 		Secrets: cmd.Cfg.Secrets,
 	}
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, &newCfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -289,7 +294,7 @@ func (cmd *Config) newCommandActionHashi(c *cli.Context) error {
 		Secrets: cmd.Cfg.Secrets,
 	}
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, &newCfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -334,7 +339,7 @@ func (cmd *Config) newCommandActionLogging(c *cli.Context) error {
 		cmd.Cfg.Logging.Path = c.String("path")
 	}
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, cmd.Cfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -369,7 +374,7 @@ func (cmd *Config) newCommandActionSecrets(c *cli.Context) error {
 	secretValues := strings.Split(c.String("secret-list"), ",")
 	cmd.Cfg.Secrets = secretValues
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, cmd.Cfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}

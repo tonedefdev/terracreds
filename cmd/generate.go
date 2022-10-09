@@ -17,7 +17,7 @@ func (cmd *Config) NewCommandGenerate() *cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			GenerateTerraCreds(c, cmd.Version, cmd.confirm)
+			GenerateTerraCreds(c, cmd.Version, cmd.Confirm)
 			return nil
 		},
 	}
