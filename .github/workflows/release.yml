@@ -24,6 +24,8 @@ jobs:
         fetch-depth: 0
     - name: Run tests
       run: cd cmd && go test -v -cover
+      env:
+        HOME: /Users/runner/
   goreleaser:
     if: startsWith(github.event.ref, 'refs/tags/v')
     name: Release
