@@ -121,7 +121,7 @@ func TestActionAzureResult(t *testing.T) {
 	}
 
 	if contains(failures, true) {
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -133,6 +133,6 @@ func TestActionReset(t *testing.T) {
 	}
 
 	args := os.Args[0:1]
-	args = append(args, "config", "--use-local-vault-only")
+	args = append(args, "config", "--use-local-vault-only", "--force")
 	app.Run(args)
 }

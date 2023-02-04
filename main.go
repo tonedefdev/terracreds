@@ -12,7 +12,7 @@ func main() {
 	terracreds := &cmd.Config{
 		DefaultReplaceString: "_",
 		TerraCreds:           cmd.NewTerraCreds(runtime.GOOS),
-		Version:              "2.1.2",
+		Version:              "2.1.3",
 
 		ConfigFile: cmd.ConfigFile{
 			EnvironmentValue: os.Getenv("TC_CONFIG_PATH"),

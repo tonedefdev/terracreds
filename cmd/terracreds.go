@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -39,7 +38,7 @@ func CopyTerraCreds(dest string) error {
 	}
 	defer from.Close()
 
-	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0644)
+	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0744)
 	if err != nil {
 		return err
 	}
@@ -69,7 +68,7 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) error {
 
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
-		cliConfig = filepath.Join(userProfile, ".terraform.d", ".terraformrc")
+		cliConfig = filepath.Join(userProfile, ".terraformrc")
 		tfPlugins = filepath.Join(userProfile, ".terraform.d", "plugins")
 		binary = filepath.Join(tfPlugins, "terraform-credentials-terracreds")
 	}
@@ -84,21 +83,26 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) error {
 		return err
 	}
 
-	if c.Bool("create-cli-config") == true {
-		const verbiage = "This command will delete any settings in your .terraformrc file\n\n    Enter 'yes' to coninue or press 'enter' or 'return' to cancel: "
-		fmt.Fprintf(color.Output, "%s: %s", color.YellowString("WARNING"), verbiage)
-		fmt.Scanln(&confirm)
-		fmt.Print("\n")
+	if c.Bool("create-cli-config") {
+		doc := heredoc.Doc(`
+		credentials_helper "terracreds" {
+		  args = []
+		}`)
 
-		if confirm == "yes" {
-			doc := heredoc.Doc(`
-			credentials_helper "terracreds" {
-				args = []
-			}`)
+		if !c.Bool("force") {
+			const verbiage = "This command will delete any settings in your .terraformrc file\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: "
+			fmt.Fprintf(color.Output, "%s: %s", color.YellowString("WARNING"), verbiage)
+			fmt.Scanln(&confirm)
+			fmt.Print("\n")
 
-			err := helpers.WriteToFile(cliConfig, doc)
-			return err
+			if confirm == "yes" {
+				err := helpers.WriteToFile(cliConfig, doc)
+				return err
+			}
 		}
+
+		err := helpers.WriteToFile(cliConfig, doc)
+		return err
 	}
 
 	return nil
@@ -140,7 +144,7 @@ func (cmd *Config) InitTerraCreds() {
 
 // LoadConfig loads the config file if it exists
 func (cmd *Config) LoadConfig(path string) error {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

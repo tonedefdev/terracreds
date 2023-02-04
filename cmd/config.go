@@ -41,6 +41,12 @@ func (cmd *Config) NewCommandConfig() *cli.Command {
 				Usage:    "Resets configuration to only use the local operating system's credential vault. This will delete all configuration values for cloud provider vaults from the config file",
 				Required: false,
 			},
+			&cli.BoolFlag{
+				Name:     "force",
+				Usage:    "Force resetting the configuration without asking for user input",
+				Required: false,
+				Value:    false,
+			},
 		},
 		Subcommands: []*cli.Command{
 			cmd.newCommandAws(),
@@ -62,25 +68,34 @@ func (cmd *Config) NewCommandConfig() *cli.Command {
 
 // newCommandActionReset resets the configuration file to only leverage the local vault
 func (cmd *Config) newCommandActionReset(c *cli.Context) error {
-	if c.Bool("use-local-vault-only") == true {
-		const verbiage = "This will reset the configuration to only use the local operating system's credential vault. Any configuration values for a cloud provider vault will be permanently lost!"
-		fmt.Fprintf(color.Output, "%s: %s\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: ", color.YellowString("WARNING"), verbiage)
-		fmt.Scanln(&cmd.Confirm)
-		fmt.Print("\n")
-
-		if cmd.Confirm == "yes" {
-			newCfg := api.Config{
-				Logging: cmd.Cfg.Logging,
-				Secrets: cmd.Cfg.Secrets,
-			}
-
-			err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
-			if err != nil {
-				helpers.CheckError(err)
-			}
-
-			return err
+	if c.Bool("use-local-vault-only") {
+		newCfg := api.Config{
+			Logging: cmd.Cfg.Logging,
+			Secrets: cmd.Cfg.Secrets,
 		}
+
+		if !c.Bool("force") {
+			const verbiage = "This will reset the configuration to only use the local operating system's credential vault. Any configuration values for a cloud provider vault will be permanently lost!"
+			fmt.Fprintf(color.Output, "%s: %s\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: ", color.YellowString("WARNING"), verbiage)
+			fmt.Scanln(&cmd.Confirm)
+			fmt.Print("\n")
+
+			if cmd.Confirm == "yes" {
+				err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
+				if err != nil {
+					helpers.CheckError(err)
+				}
+
+				return err
+			}
+		}
+
+		err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		return err
 	}
 
 	err := c.Command.Run(c)

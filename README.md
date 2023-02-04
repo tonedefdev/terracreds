@@ -1,11 +1,11 @@
 ![Terracreds](https://github.com/tonedefdev/terracreds/workflows/Terracreds/badge.svg?branch=v1.0.2)
 
-<img src="https://github.com/tonedefdev/terracreds/blob/main/img/terracreds.png?raw=true" align="right" width="350" height="350">
+<img src="./img/terracreds.png" align="right" width="350" height="350">
 
 # Terracreds
-A credential helper for Terraform Automation and Collaboration Software, or to store any other secrets, securely in the operating system's credential vault or through a third party vault provider. No longer keep secrets in a plain text configuration file!
+A credential helper for Terraform Automation and Collaboration Software used to store API tokens, or any other secrets, securely in the operating system's credential vault, or through a third party vault provider. With `terracreds` you no longer need to keep secrets in a plain text configuration file!
 
-We all know storing secrets in plain text can pose major security threats, and Terraform doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to help enable stronger security practices.
+Storing secrets in plain text can pose major security threats even when proper file permissions are in place. Terraform also doesn't come pre-packaged with a credential helper, so we decided to create one and to share it with the greater Terraform/DevOps community to make it easier to implement stronger security practices.
 
 #### Currently supported Operating Systems:
 - [x] Windows (Credential Manager)
@@ -69,13 +69,9 @@ choco upgrade terracreds -y
 ```
 
 ## macOS Install
-We are currently working on a `homebrew` package, however, you can leverage this shell script to install `terracreds`
-
+Our `homebrew` formula is the easiest way to install `terracreds` on macOS. You can install using the following command:
 ```sh
-curl https://github.com/tonedefdev/terracreds/releases/download/v2.1.2/terracreds_2.1.2_darwin_amd64.tar.gz -o terracreds_2.1.2_darwin_amd64.tar.gz  && \
-tar -xvf terracreds_2.1.2_darwin_amd64.tar.gz && \
-sudo mv -f terracreds /usr/bin/terracreds && \
-rm -f terracreds_2.1.2_darwin_amd64.tar.gz README.md
+brew install tonedefdev/terracreds/terracreds
 ```
 
 ## Linux Install
@@ -261,7 +257,7 @@ Also, by default, `terracreds` will convert any dashes `[-]` in a secret name wi
 terracreds list --as-tfvars --override-replace-string -
 ```
 
-The above example would maintain the dash `[-]` in the outuput of the formatted TF_VARS instead of replacing it by the default underscore `[_]`
+The above example would maintain the dash `[-]` in the output of the formatted TF_VARS instead of replacing it by the default underscore `[_]`
 
 Additionally, you can use `--as-json` to return the secret names and values as a JSON string. This is printed to standard output so you can make use of shell pipes and other commands to ingest the data.
 
@@ -270,7 +266,7 @@ Additionally, you can use `--as-json` to return the secret names and values as a
 
 > New in version `2.1.0`
 
-All of the external vault providers now make use of the provider's default credential authentication schemes. Please, refer to the documentation for each provider's default authentication mechanisms for more information on what options are availabile, and what is required to set up authentication for each method.
+All of the external vault providers now make use of the provider's default credential authentication schemes. Please, refer to the documentation for each provider's default authentication mechanisms for more information on what options are available, and what is required to set up authentication for each method.
 
 ### Configure from Terracreds
 > New in version `2.1.0`
@@ -297,7 +293,7 @@ terracreds config aws --description 'my super secret' --region 'us-west-2' --sec
 | `region` | The `Secrets Manager` instance's region where the secret will be stored | `yes` | 
 | `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TACOS server will be used for the name instead | `no` |
 
-The following role permissions are required in order for the `EC2 Instance Role` to levearge `terracreds` with `AWS Secrets Manager`:
+The following role permissions are required in order for the `EC2 Instance Role` to leverage `terracreds` with `AWS Secrets Manager`:
 ```hcl
 Action = [
   "secretsmanager:CreateSecret",
@@ -391,7 +387,7 @@ terracreds config hashicorp \
 ## Protection
 In order to add some protection `terracreds` adds a username to the credential object stored in the local operating system, and checks to ensure that the user requesting access to the secret is the same user as the secret's creator.  
 
-Any attempt to access or modify this secret from `terracreds` outside of the user that created the credentail will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts
+Any attempt to access or modify this secret from `terracreds` outside of the user that created the credential will lead to denial messages. Additionally, if the credential name is not found, the same access denied message will be provided in lieu of a generic not found message to help prevent brute force attempts
 
 ## Logging
 > New in version `2.1.0`
