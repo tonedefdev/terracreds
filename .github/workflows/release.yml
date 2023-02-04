@@ -23,7 +23,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Run tests
-      run: cd cmd && go test -v -cover
+      run: mkdir /Users/runner/.terraform.d && cd cmd && go test -v -cover
       env:
         HOME: /Users/runner/
   goreleaser:

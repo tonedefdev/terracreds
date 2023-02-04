@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewCommandActionStore(t *testing.T) {
-	if err := exec.Command("go", "build", ".").Run(); err != nil {
+	if err := exec.Command("go", "install", ".").Run(); err != nil {
 		t.Fatal(err)
 	}
 
