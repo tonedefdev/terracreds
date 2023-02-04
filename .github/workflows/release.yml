@@ -10,7 +10,6 @@ on:
 
 jobs:
   test-mac:
-    if: ${{ github.pull_request.opened == true }}
     name: Test macOS
     runs-on: macos-latest
     steps:
@@ -26,6 +25,7 @@ jobs:
     - name: Run tests
       run: cd cmd && go test -v -cover
   goreleaser:
+    if: startsWith(github.event.ref, 'refs/tags/v')
     name: Release
     runs-on: ubuntu-latest
     steps:
