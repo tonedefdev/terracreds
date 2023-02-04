@@ -1,13 +1,16 @@
 name: Terracreds
 
 on:
+  pull_request:
+    branches:
+    - main
   push:
     tags:
       - '*'
 
 jobs:
   test-mac:
-    if: ${{ github.pull_request.opened }}
+    if: ${{ github.pull_request.opened == true }}
     name: Test macOS
     runs-on: macos-latest
     steps:
