@@ -32,7 +32,17 @@ type TerraCreds interface {
 
 // CopyTerraCreds will create a copy of the binary to the destination path.
 func CopyTerraCreds(dest string) error {
-	from, err := os.Open(string(os.Args[0]))
+	exec, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	resolvedExecPath, err := filepath.EvalSymlinks(exec)
+	if err != nil {
+		return err
+	}
+
+	from, err := os.Open(resolvedExecPath)
 	if err != nil {
 		return err
 	}
@@ -49,7 +59,7 @@ func CopyTerraCreds(dest string) error {
 		return err
 	}
 
-	fmt.Fprintf(color.Output, "%s: Copied binary '%s' to '%s'\n", color.CyanString("INFO"), string(os.Args[0]), dest)
+	fmt.Fprintf(color.Output, "%s: Copied binary '%s' to '%s'\n", color.CyanString("INFO"), resolvedExecPath, dest)
 	return err
 }
 

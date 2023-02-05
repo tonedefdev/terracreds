@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/tonedefdev/terracreds/pkg/helpers"
 	"github.com/urfave/cli/v2"
 )
 
@@ -22,8 +23,11 @@ func (cmd *Config) NewCommandGenerate() *cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			GenerateTerraCreds(c, cmd.Version, cmd.Confirm)
-			return nil
+			err := GenerateTerraCreds(c, cmd.Version, cmd.Confirm)
+			if err != nil {
+				helpers.CheckError(err)
+			}
+			return err
 		},
 	}
 
