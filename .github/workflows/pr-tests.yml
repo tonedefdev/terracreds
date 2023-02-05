@@ -19,12 +19,12 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Run tests
+    - name: Build and run tests
       run: |
-        mkdir /Users/runner/.terraform.d &&
-        go build . &&
-        export PATH=$PATH:$PWD &&
-        cd cmd &&
+        mkdir /Users/runner/.terraform.d
+        go build .
+        export PATH=$PATH:$PWD
+        cd cmd
         go test -v -cover
       env:
         HOME: /Users/runner/
@@ -41,9 +41,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Run tests
+    - name: Build and run tests
       run: |
-        New-Item -ItemType Directory -Name .terraform.d -Path $env:HOME
+        New-Item -ItemType Directory -Name terraform.d -Path $env:APPDATA
+        set HOME=$env:APPDATA
         go build .
         $env:PATH += ";$pwd"
         cd cmd
