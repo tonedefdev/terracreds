@@ -22,10 +22,8 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Build App
-      run: go build . && cp terracreds /usr/bin/terracreds && chmod +x /usr/bin/terracreds
     - name: Run tests
-      run: mkdir /Users/runner/.terraform.d && cd cmd && go test -v -cover
+      run: mkdir /Users/runner/.terraform.d && go build . && export PATH=$PATH:$PWD && cd cmd && go test -v -cover
       env:
         HOME: /Users/runner/
   goreleaser:
