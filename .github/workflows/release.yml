@@ -1,33 +1,12 @@
-name: Terracreds
+name: release-terracreds
 
 on:
-  pull_request:
-    branches:
-    - main
   push:
     tags:
       - '*'
 
 jobs:
-  test-mac:
-    name: Test macOS
-    runs-on: macos-latest
-    steps:
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v2
-      with:
-        go-version: ^1.19
-      id: go
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Run tests
-      run: mkdir /Users/runner/.terraform.d && go build . && export PATH=$PATH:$PWD && cd cmd && go test -v -cover
-      env:
-        HOME: /Users/runner/
   goreleaser:
-    if: startsWith(github.event.ref, 'refs/tags/v')
     name: Release
     runs-on: ubuntu-latest
     steps:
