@@ -1,0 +1,50 @@
+name: terracreds-pr-tests
+
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  test-mac:
+    name: Test macOS
+    runs-on: macos-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.19
+      id: go
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Run tests
+      run: |
+        mkdir /Users/runner/.terraform.d &&
+        go build . &&
+        export PATH=$PATH:$PWD &&
+        cd cmd &&
+        go test -v -cover
+      env:
+        HOME: /Users/runner/
+  test-win:
+    name: Test Windows
+    runs-on: windows-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.19
+      id: go
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Run tests
+      run: |
+        New-Item -ItemType Directory -Name .terraform.d -Path $env:HOME
+        go build .
+        $env:PATH += ";$pwd"
+        cd cmd
+        go test -v -cover
