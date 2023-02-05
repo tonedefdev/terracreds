@@ -8,40 +8,35 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const (
-	cfgName = "config.yaml"
-	version = "2.1.2"
-)
-
-var (
-	defaultReplaceString = "_"
-	fileEnvVar           = os.Getenv("TC_CONFIG_PATH")
-)
-
 func main() {
-	cmdConfig := &cmd.Config{
-		DefaultReplaceString: defaultReplaceString,
+	terracreds := &cmd.Config{
+		DefaultReplaceString: "_",
 		TerraCreds:           cmd.NewTerraCreds(runtime.GOOS),
-		Version:              version,
+		Version:              "2.1.3",
+
+		ConfigFile: cmd.ConfigFile{
+			EnvironmentValue: os.Getenv("TC_CONFIG_PATH"),
+			Name:             "config.yaml",
+		},
 	}
 
-	cmdConfig.InitTerraCreds(cfgName, fileEnvVar)
+	terracreds.InitTerraCreds()
 
 	app := &cli.App{
 		Name:                 "terracreds",
 		EnableBashCompletion: true,
 		Usage:                "a credential helper for Terraform Automation and Collaboration Software (TACOS) that leverages your vault provider of choice for securely storing API tokens or other secrets.\n\n   Visit https://github.com/tonedefdev/terracreds for more information",
 		UsageText:            "Store Terraform Enterprise or Cloud API tokens by running 'terraform login' or manually store any secret you choose with 'terracreds create -n mySuperSecret -v mySuperSafePassword'",
-		Version:              version,
+		Version:              terracreds.Version,
 		Commands: []*cli.Command{
-			cmdConfig.NewCommandConfig(),
-			cmdConfig.NewCommandCreate(),
-			cmdConfig.NewCommandDelete(),
-			cmdConfig.NewCommandForget(),
-			cmdConfig.NewCommandGenerate(),
-			cmdConfig.NewCommandGet(),
-			cmdConfig.NewCommandList(),
-			cmdConfig.NewCommandStore(),
+			terracreds.NewCommandConfig(),
+			terracreds.NewCommandCreate(),
+			terracreds.NewCommandDelete(),
+			terracreds.NewCommandForget(),
+			terracreds.NewCommandGenerate(),
+			terracreds.NewCommandGet(),
+			terracreds.NewCommandList(),
+			terracreds.NewCommandStore(),
 		},
 	}
 

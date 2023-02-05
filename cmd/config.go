@@ -11,16 +11,23 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Config struct defines the configuration for Terracreds
+// Config struct defines the configuration for the Terracreds CLI application
 type Config struct {
 	Cfg                  *api.Config
-	ConfigFilePath       string
+	ConfigFile           ConfigFile
 	DefaultReplaceString string
 	TerraCreds           TerraCreds
 	SecretNames          []string
 	Version              string
 
-	confirm string
+	Confirm string
+}
+
+// ConfigFile defines values for the configuration file
+type ConfigFile struct {
+	EnvironmentValue string
+	Path             string
+	Name             string
 }
 
 // NewCommandConfig instantiates the config command
@@ -33,6 +40,12 @@ func (cmd *Config) NewCommandConfig() *cli.Command {
 				Name:     "use-local-vault-only",
 				Usage:    "Resets configuration to only use the local operating system's credential vault. This will delete all configuration values for cloud provider vaults from the config file",
 				Required: false,
+			},
+			&cli.BoolFlag{
+				Name:     "force",
+				Usage:    "Force resetting the configuration without asking for user input",
+				Required: false,
+				Value:    false,
 			},
 		},
 		Subcommands: []*cli.Command{
@@ -55,40 +68,38 @@ func (cmd *Config) NewCommandConfig() *cli.Command {
 
 // newCommandActionReset resets the configuration file to only leverage the local vault
 func (cmd *Config) newCommandActionReset(c *cli.Context) error {
-	if c.Bool("use-local-vault-only") == true {
-		const verbiage = "This will reset the configuration to only use the local operating system's credential vault. Any configuration values for a cloud provider vault will be permanently lost!"
-		fmt.Fprintf(color.Output, "%s: %s\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: ", color.YellowString("WARNING"), verbiage)
-		fmt.Scanln(&cmd.confirm)
-		fmt.Print("\n")
-
-		if cmd.confirm == "yes" {
-			cmd.Cfg.Aws.Description = ""
-			cmd.Cfg.Aws.Region = ""
-			cmd.Cfg.Aws.SecretName = ""
-
-			cmd.Cfg.Azure.SecretName = ""
-			cmd.Cfg.Azure.SubscriptionId = ""
-			cmd.Cfg.Azure.VaultUri = ""
-
-			cmd.Cfg.GCP.ProjectId = ""
-			cmd.Cfg.GCP.SecretId = ""
-
-			cmd.Cfg.HashiVault.EnvironmentTokenName = ""
-			cmd.Cfg.HashiVault.KeyVaultPath = ""
-			cmd.Cfg.HashiVault.SecretName = ""
-			cmd.Cfg.HashiVault.SecretPath = ""
-			cmd.Cfg.HashiVault.VaultUri = ""
-
-			err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
-			if err != nil {
-				helpers.CheckError(err)
-			}
-
-			return err
+	if c.Bool("use-local-vault-only") {
+		newCfg := api.Config{
+			Logging: cmd.Cfg.Logging,
+			Secrets: cmd.Cfg.Secrets,
 		}
+
+		if !c.Bool("force") {
+			const verbiage = "This will reset the configuration to only use the local operating system's credential vault. Any configuration values for a cloud provider vault will be permanently lost!"
+			fmt.Fprintf(color.Output, "%s: %s\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: ", color.YellowString("WARNING"), verbiage)
+			fmt.Scanln(&cmd.Confirm)
+			fmt.Print("\n")
+
+			if cmd.Confirm == "yes" {
+				err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
+				if err != nil {
+					helpers.CheckError(err)
+				}
+
+				return err
+			}
+		}
+
+		err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
+		if err != nil {
+			helpers.CheckError(err)
+		}
+
+		return err
 	}
 
-	return nil
+	err := c.Command.Run(c)
+	return err
 }
 
 // newCommandAws instantiates the command used to setup the AWS configuration
@@ -125,25 +136,17 @@ func (cmd *Config) newCommandAws() *cli.Command {
 
 // newCommandActionAws sets the AWS configuration and writes it to the config file
 func (cmd *Config) newCommandActionAws(c *cli.Context) error {
-	cmd.Cfg.Aws.Description = c.String("description")
-	cmd.Cfg.Aws.Region = c.String("region")
-	cmd.Cfg.Aws.SecretName = c.String("secret-name")
+	newCfg := api.Config{
+		Aws: api.Aws{
+			Description: c.String("description"),
+			Region:      c.String("region"),
+			SecretName:  c.String("secret-name"),
+		},
+		Logging: cmd.Cfg.Logging,
+		Secrets: cmd.Cfg.Secrets,
+	}
 
-	// Set all other config values to empty
-	cmd.Cfg.Azure.SecretName = ""
-	cmd.Cfg.Azure.SubscriptionId = ""
-	cmd.Cfg.Azure.VaultUri = ""
-
-	cmd.Cfg.GCP.ProjectId = ""
-	cmd.Cfg.GCP.SecretId = ""
-
-	cmd.Cfg.HashiVault.EnvironmentTokenName = ""
-	cmd.Cfg.HashiVault.KeyVaultPath = ""
-	cmd.Cfg.HashiVault.SecretName = ""
-	cmd.Cfg.HashiVault.SecretPath = ""
-	cmd.Cfg.HashiVault.VaultUri = ""
-
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -186,25 +189,17 @@ func (cmd *Config) newCommandAzure() *cli.Command {
 
 // newCommandActionAzure sets the Azure configuration and writes it to the config file
 func (cmd *Config) newCommandActionAzure(c *cli.Context) error {
-	cmd.Cfg.Azure.SecretName = c.String("secret-name")
-	cmd.Cfg.Azure.SubscriptionId = c.String("subscription-id")
-	cmd.Cfg.Azure.VaultUri = c.String("vault-uri")
+	newCfg := api.Config{
+		Azure: api.Azure{
+			SecretName:     c.String("secret-name"),
+			SubscriptionId: c.String("subscription-id"),
+			VaultUri:       c.String("vault-uri"),
+		},
+		Logging: cmd.Cfg.Logging,
+		Secrets: cmd.Cfg.Secrets,
+	}
 
-	// Set all other config values to empty
-	cmd.Cfg.Aws.Description = ""
-	cmd.Cfg.Aws.Region = ""
-	cmd.Cfg.Aws.SecretName = ""
-
-	cmd.Cfg.GCP.ProjectId = ""
-	cmd.Cfg.GCP.SecretId = ""
-
-	cmd.Cfg.HashiVault.EnvironmentTokenName = ""
-	cmd.Cfg.HashiVault.KeyVaultPath = ""
-	cmd.Cfg.HashiVault.SecretName = ""
-	cmd.Cfg.HashiVault.SecretPath = ""
-	cmd.Cfg.HashiVault.VaultUri = ""
-
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -241,25 +236,16 @@ func (cmd *Config) newCommandGcp() *cli.Command {
 
 // newCommandActionGcp sets the GCP configuration and writes it to the config file
 func (cmd *Config) newCommandActionGcp(c *cli.Context) error {
-	cmd.Cfg.GCP.ProjectId = c.String("project-id")
-	cmd.Cfg.GCP.SecretId = c.String("secret-id")
+	newCfg := api.Config{
+		GCP: api.GCP{
+			ProjectId: c.String("project-id"),
+			SecretId:  c.String("secret-id"),
+		},
+		Logging: cmd.Cfg.Logging,
+		Secrets: cmd.Cfg.Secrets,
+	}
 
-	// Set all other config values to empty
-	cmd.Cfg.Azure.SecretName = ""
-	cmd.Cfg.Azure.SubscriptionId = ""
-	cmd.Cfg.Azure.VaultUri = ""
-
-	cmd.Cfg.Aws.Description = ""
-	cmd.Cfg.Aws.Region = ""
-	cmd.Cfg.Aws.SecretName = ""
-
-	cmd.Cfg.HashiVault.EnvironmentTokenName = ""
-	cmd.Cfg.HashiVault.KeyVaultPath = ""
-	cmd.Cfg.HashiVault.SecretName = ""
-	cmd.Cfg.HashiVault.SecretPath = ""
-	cmd.Cfg.HashiVault.VaultUri = ""
-
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -311,25 +297,19 @@ func (cmd *Config) newCommandHashi() *cli.Command {
 
 // newCommandActionHashi sets the Hashi Vault configuration and writes it to the config file
 func (cmd *Config) newCommandActionHashi(c *cli.Context) error {
-	cmd.Cfg.HashiVault.EnvironmentTokenName = c.String("environment-token-name")
-	cmd.Cfg.HashiVault.KeyVaultPath = c.String("key-vault-path")
-	cmd.Cfg.HashiVault.SecretName = c.String("secret-name")
-	cmd.Cfg.HashiVault.SecretPath = c.String("secret-path")
-	cmd.Cfg.HashiVault.VaultUri = c.String("vault-uri")
+	newCfg := api.Config{
+		HashiVault: api.HCVault{
+			EnvironmentTokenName: c.String("environment-token-name"),
+			KeyVaultPath:         c.String("key-vault-path"),
+			SecretName:           c.String("secret-name"),
+			SecretPath:           c.String("secret-path"),
+			VaultUri:             c.String("vault-uri"),
+		},
+		Logging: cmd.Cfg.Logging,
+		Secrets: cmd.Cfg.Secrets,
+	}
 
-	// Set all other config values to empty
-	cmd.Cfg.Aws.Description = ""
-	cmd.Cfg.Aws.Region = ""
-	cmd.Cfg.Aws.SecretName = ""
-
-	cmd.Cfg.Azure.SecretName = ""
-	cmd.Cfg.Azure.SubscriptionId = ""
-	cmd.Cfg.Azure.VaultUri = ""
-
-	cmd.Cfg.GCP.ProjectId = ""
-	cmd.Cfg.GCP.SecretId = ""
-
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, &newCfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -374,7 +354,7 @@ func (cmd *Config) newCommandActionLogging(c *cli.Context) error {
 		cmd.Cfg.Logging.Path = c.String("path")
 	}
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, cmd.Cfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}
@@ -409,7 +389,7 @@ func (cmd *Config) newCommandActionSecrets(c *cli.Context) error {
 	secretValues := strings.Split(c.String("secret-list"), ",")
 	cmd.Cfg.Secrets = secretValues
 
-	err := helpers.WriteConfig(cmd.ConfigFilePath, cmd.Cfg)
+	err := helpers.WriteConfig(cmd.ConfigFile.Path, cmd.Cfg)
 	if err != nil {
 		helpers.CheckError(err)
 	}

@@ -15,9 +15,14 @@ func (cmd *Config) NewCommandGenerate() *cli.Command {
 				Value: false,
 				Usage: "Creates the Terraform CLI config with a terracreds credential helper block. This will overwrite the existing file if it already exists.",
 			},
+			&cli.BoolFlag{
+				Name:  "force",
+				Value: false,
+				Usage: "Force creation of the CLI config without user input.",
+			},
 		},
 		Action: func(c *cli.Context) error {
-			GenerateTerraCreds(c, cmd.Version, cmd.confirm)
+			GenerateTerraCreds(c, cmd.Version, cmd.Confirm)
 			return nil
 		},
 	}

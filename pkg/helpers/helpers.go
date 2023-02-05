@@ -3,7 +3,6 @@ package helpers
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -34,7 +33,11 @@ func CreateConfigFile(path string) error {
 			}
 
 			bytes, err := yaml.Marshal(&cfgFile)
-			err = ioutil.WriteFile(path, bytes, 0644)
+			if err != nil {
+				return err
+			}
+
+			err = os.WriteFile(path, bytes, 0644)
 			if err != nil {
 				return err
 			}
@@ -101,7 +104,7 @@ func GetBinaryPath(binary string, os string) string {
 func NewDirectory(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			err := os.Mkdir(path, 0644)
+			err := os.Mkdir(path, 0744)
 			if err != nil {
 				return err
 			}
@@ -114,7 +117,7 @@ func NewDirectory(path string) error {
 
 // Logging forms the path and writes to log if enabled
 func Logging(cfg *api.Config, msg string, level string) {
-	if cfg.Logging.Enabled == true {
+	if cfg.Logging.Enabled {
 		absolutePath, err := homedir.Expand(cfg.Logging.Path)
 		if err != nil {
 			log.Fatal(err)
@@ -148,7 +151,7 @@ func WriteConfig(path string, cfg *api.Config) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(path, bytes, 0644)
+	err = os.WriteFile(path, bytes, 0644)
 	if err != nil {
 		return err
 	}

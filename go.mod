@@ -1,6 +1,6 @@
 module github.com/tonedefdev/terracreds
 
-go 1.18
+go 1.19
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.0.0

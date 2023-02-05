@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -31,26 +30,6 @@ type TerraCreds interface {
 	List(c *cli.Context, cfg *api.Config, secretNames []string, user *user.User, vault vault.TerraVault) ([]string, error)
 }
 
-// InitTerraCreds initializes the configuration for Terracreds
-func (cmd *Config) InitTerraCreds(cfgName string, fileEnvVar string) {
-	if fileEnvVar != "" {
-		cmd.ConfigFilePath = filepath.Join(fileEnvVar, cfgName)
-	} else {
-		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
-		cmd.ConfigFilePath = filepath.Join(binPath, cfgName)
-	}
-
-	err := helpers.CreateConfigFile(cmd.ConfigFilePath)
-	if err != nil {
-		helpers.CheckError(err)
-	}
-
-	err = cmd.LoadConfig(cmd.ConfigFilePath)
-	if err != nil {
-		helpers.CheckError(err)
-	}
-}
-
 // CopyTerraCreds will create a copy of the binary to the destination path.
 func CopyTerraCreds(dest string) error {
 	from, err := os.Open(string(os.Args[0]))
@@ -59,7 +38,7 @@ func CopyTerraCreds(dest string) error {
 	}
 	defer from.Close()
 
-	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0644)
+	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0744)
 	if err != nil {
 		return err
 	}
@@ -89,7 +68,7 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) error {
 
 	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
 		userProfile := os.Getenv("HOME")
-		cliConfig = filepath.Join(userProfile, ".terraform.d", ".terraformrc")
+		cliConfig = filepath.Join(userProfile, ".terraformrc")
 		tfPlugins = filepath.Join(userProfile, ".terraform.d", "plugins")
 		binary = filepath.Join(tfPlugins, "terraform-credentials-terracreds")
 	}
@@ -104,21 +83,26 @@ func GenerateTerraCreds(c *cli.Context, version string, confirm string) error {
 		return err
 	}
 
-	if c.Bool("create-cli-config") == true {
-		const verbiage = "This command will delete any settings in your .terraformrc file\n\n    Enter 'yes' to coninue or press 'enter' or 'return' to cancel: "
-		fmt.Fprintf(color.Output, "%s: %s", color.YellowString("WARNING"), verbiage)
-		fmt.Scanln(&confirm)
-		fmt.Print("\n")
+	if c.Bool("create-cli-config") {
+		doc := heredoc.Doc(`
+		credentials_helper "terracreds" {
+		  args = []
+		}`)
 
-		if confirm == "yes" {
-			doc := heredoc.Doc(`
-			credentials_helper "terracreds" {
-				args = []
-			}`)
+		if !c.Bool("force") {
+			const verbiage = "This command will delete any settings in your .terraformrc file\n\n    Enter 'yes' to continue or press 'enter' or 'return' to cancel: "
+			fmt.Fprintf(color.Output, "%s: %s", color.YellowString("WARNING"), verbiage)
+			fmt.Scanln(&confirm)
+			fmt.Print("\n")
 
-			err := helpers.WriteToFile(cliConfig, doc)
-			return err
+			if confirm == "yes" {
+				err := helpers.WriteToFile(cliConfig, doc)
+				return err
+			}
 		}
+
+		err := helpers.WriteToFile(cliConfig, doc)
+		return err
 	}
 
 	return nil
@@ -138,9 +122,29 @@ func GetSecretName(cfg *api.Config, hostname string) string {
 	return hostname
 }
 
+// InitTerraCreds initializes the configuration for Terracreds
+func (cmd *Config) InitTerraCreds() {
+	if cmd.ConfigFile.EnvironmentValue != "" {
+		cmd.ConfigFile.Path = filepath.Join(cmd.ConfigFile.EnvironmentValue, cmd.ConfigFile.Name)
+	} else {
+		binPath := helpers.GetBinaryPath(os.Args[0], runtime.GOOS)
+		cmd.ConfigFile.Path = filepath.Join(binPath, cmd.ConfigFile.Name)
+	}
+
+	err := helpers.CreateConfigFile(cmd.ConfigFile.Path)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+
+	err = cmd.LoadConfig(cmd.ConfigFile.Path)
+	if err != nil {
+		helpers.CheckError(err)
+	}
+}
+
 // LoadConfig loads the config file if it exists
 func (cmd *Config) LoadConfig(path string) error {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
