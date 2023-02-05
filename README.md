@@ -78,10 +78,10 @@ brew install tonedefdev/terracreds/terracreds
 You'll need to download the latest binary from our release page and place it anywhere on `$PATH` of your system. You can also copy and run the following commands:
 
 ```bash
-wget https://github.com/tonedefdev/terracreds/releases/download/v2.1.2/terracreds_2.1.2_linux_amd64.tar.gz && \
-tar -xvf terracreds_2.1.2_linux_amd64.tar.gz && \
+wget https://github.com/tonedefdev/terracreds/releases/download/v2.1.3/terracreds_2.1.3_linux_amd64.tar.gz && \
+tar -xvf terracreds_2.1.3_linux_amd64.tar.gz && \
 sudo mv -f terracreds /usr/bin/terracreds && \
-rm -f terracreds_2.1.2_linux_amd64.tar.gz README.md
+rm -f terracreds_2.1.3_linux_amd64.tar.gz README.md
 ```
 
 The `terracreds` Linux implementation uses `gnome-keyring` in conjunction with `gnome-keyring-daemon` 

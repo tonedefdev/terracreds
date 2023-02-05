@@ -44,6 +44,6 @@ func TestCreateConfig(t *testing.T) {
 
 	_, err := os.ReadFile(cliConfig)
 	if err != nil {
-		t.FailNow()
+		t.Fatal(err)
 	}
 }
