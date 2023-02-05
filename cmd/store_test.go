@@ -8,12 +8,6 @@ import (
 )
 
 func TestNewCommandActionStore(t *testing.T) {
-	if err := exec.Command("go", "install", ".").Run(); err != nil {
-		t.Fatal(err)
-	}
-
-	defer os.Remove("terracreds")
-
 	store := exec.Command("terracreds", "store", "test")
 
 	buffer := bytes.Buffer{}
