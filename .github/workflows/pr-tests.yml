@@ -44,7 +44,8 @@ jobs:
     - name: Build and run tests
       run: |
         New-Item -ItemType Directory -Name terraform.d -Path $env:APPDATA
-        set HOME=$env:APPDATA
+        $env:HOME=$env:APPDATA
+        $env:TC_CONFIG_PATH=$env:APPDATA
         go build .
         $env:PATH += ";$pwd"
         cd cmd
