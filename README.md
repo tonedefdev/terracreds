@@ -1,4 +1,4 @@
-![Terracreds](https://github.com/tonedefdev/terracreds/workflows/Terracreds/badge.svg?branch=v1.0.2)
+[![terracreds-pr-tests](https://github.com/tonedefdev/terracreds/actions/workflows/pr-tests.yml/badge.svg)](https://github.com/tonedefdev/terracreds/actions/workflows/pr-tests.yml)
 
 <img src="./img/terracreds.png" align="right" width="350" height="350">
 
