@@ -1,4 +1,4 @@
-[![terracreds-pr-tests](https://github.com/tonedefdev/terracreds/actions/workflows/pr-tests.yml/badge.svg)](https://github.com/tonedefdev/terracreds/actions/workflows/pr-tests.yml)
+[![macOS Build](https://github.com/tonedefdev/terracreds/actions/workflows/macos-pr-build-test.yml/badge.svg?branch=hotfix)](https://github.com/tonedefdev/terracreds/actions/workflows/macos-pr-build-test.yml) [![Windows Build](https://github.com/tonedefdev/terracreds/actions/workflows/win-pr-build-test.yml/badge.svg?branch=hotfix)](https://github.com/tonedefdev/terracreds/actions/workflows/win-pr-build-test.yml)
 
 <img src="./img/terracreds.png" align="right" width="350" height="350">
 

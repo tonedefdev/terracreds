@@ -21,12 +21,12 @@ jobs:
         fetch-depth: 0
     - name: Build
       run: |
-        New-Item -ItemType Directory -Name terraform.d -Path $env:APPDATA
-        $env:HOME=$env:APPDATA
-        $env:TC_CONFIG_PATH=$env:APPDATA
         go build .
     - name: Test
       run: |
+        New-Item -ItemType Directory -Name terraform.d -Path $env:APPDATA | Out-Null
+        $env:HOME=$env:APPDATA
+        $env:TC_CONFIG_PATH=$env:APPDATA
         $env:PATH += ";$pwd"
         cd cmd
         go test -v -cover
