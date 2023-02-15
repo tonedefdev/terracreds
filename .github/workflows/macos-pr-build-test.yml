@@ -7,7 +7,7 @@ on:
 
 jobs:
   test-mac:
-    name: Test macOS
+    name: Build and Test macOS
     runs-on: macos-latest
     steps:
     - name: Set up Go 1.x
