@@ -1,14 +1,17 @@
-name: Ubuntu Build
+name: macOS Build
 
-on:
+on: [push, pull_request]
+  push:
+    branches:
+    - main
   pull_request:
     branches:
     - main
 
 jobs:
   test-mac:
-    name: Build and Test Ubuntu
-    runs-on: ubuntu-latest
+    name: Build and Test macOS
+    runs-on: macos-latest
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
@@ -21,10 +24,10 @@ jobs:
         fetch-depth: 0
     - name: Build
       run: |
-        mkdir $HOME/.terraform.d
+        mkdir /Users/runner/.terraform.d
         go build .
       env:
-        HOME: /home/runner
+        HOME: /Users/runner/
     - name: Test
       run: |
         export PATH=$PATH:$PWD
