@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"runtime"
 
 	"github.com/tonedefdev/terracreds/cmd"
 	"github.com/urfave/cli/v2"
@@ -11,8 +10,8 @@ import (
 func main() {
 	terracreds := &cmd.Config{
 		DefaultReplaceString: "_",
-		TerraCreds:           cmd.NewTerraCreds(runtime.GOOS),
-		Version:              "2.1.3",
+		TerraCreds:           cmd.NewTerraCreds(),
+		Version:              "2.1.4",
 
 		ConfigFile: cmd.ConfigFile{
 			EnvironmentValue: os.Getenv("TC_CONFIG_PATH"),
@@ -40,5 +39,9 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		print(err.Error())
+		os.Exit(1)
+	}
 }

@@ -7,7 +7,7 @@ import (
 	"os/user"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/tonedefdev/terracreds/pkg/errors"
 	"github.com/tonedefdev/terracreds/pkg/helpers"
 	"github.com/urfave/cli/v2"
 )
@@ -63,8 +63,13 @@ func (cmd *Config) NewCommandList() *cli.Command {
 // newCommandActionList returns the secret names from the vault either as a string, TF_VARs, or JSON
 func (cmd *Config) newCommandActionList(c *cli.Context) error {
 	if len(os.Args) == 2 {
-		fmt.Fprintf(color.Output, "%s: No list command was specified. Use 'terracreds list -h' to print help info\n", color.RedString("ERROR"))
-		return nil
+		err := &errors.CustomError{
+			Message: "No list command was specified. Use 'terracreds list -h' to print help info",
+			Level:   "ERROR",
+		}
+
+		helpers.Logging(cmd.Cfg, err.Message, err.Level)
+		return err
 	}
 
 	if len(os.Args) > 1 {
@@ -79,9 +84,13 @@ func (cmd *Config) newCommandActionList(c *cli.Context) error {
 		}
 
 		if len(cmd.Cfg.Secrets) < 1 && c.String("secret-names") == "" {
-			verbiage := "A list of secrets must be provided. Use '--secret-names' and pass it a comma separated list of secrets, or setup the 'secrets' block in the terracreds config file to use this command\n"
-			fmt.Fprintf(color.Output, "%s: %s", color.RedString("ERROR"), verbiage)
-			return nil
+			err := &errors.CustomError{
+				Message: "A list of secrets must be provided. Use '--secret-names' and pass it a comma separated list of secrets, or setup the 'secrets' block in the terracreds config file to use this command",
+				Level:   "ERROR",
+			}
+
+			helpers.Logging(cmd.Cfg, err.Message, err.Level)
+			return err
 		}
 
 		user, err := user.Current()

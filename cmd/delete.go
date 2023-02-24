@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/tonedefdev/terracreds/pkg/errors"
 	"github.com/tonedefdev/terracreds/pkg/helpers"
 	"github.com/urfave/cli/v2"
 )
@@ -36,8 +37,13 @@ func (cmd *Config) NewCommandDelete() *cli.Command {
 // newCommandActionDelete deletes the secret based on the type of vault
 func (cmd *Config) newCommandActionDelete(c *cli.Context) error {
 	if len(os.Args) == 2 {
-		fmt.Fprintf(color.Output, "%s: No secret name was specified. Use 'terracreds delete -h' for help info\n", color.RedString("ERROR"))
-		return nil
+		err := &errors.CustomError{
+			Message: "No secret name was specified. Use 'terracreds delete -h' to print help info",
+			Level:   "ERROR",
+		}
+
+		helpers.Logging(cmd.Cfg, err.Message, err.Level)
+		return err
 	}
 
 	if !strings.Contains(os.Args[2], "-n") && !strings.Contains(os.Args[2], "--name") {

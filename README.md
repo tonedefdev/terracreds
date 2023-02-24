@@ -1,4 +1,4 @@
-[![macOS Build](https://github.com/tonedefdev/terracreds/actions/workflows/macos-pr-build-test.yml/badge.svg?branch=hotfix)](https://github.com/tonedefdev/terracreds/actions/workflows/macos-pr-build-test.yml) [![Windows Build](https://github.com/tonedefdev/terracreds/actions/workflows/win-pr-build-test.yml/badge.svg?branch=hotfix)](https://github.com/tonedefdev/terracreds/actions/workflows/win-pr-build-test.yml)
+[![macOS Build](https://github.com/tonedefdev/terracreds/actions/workflows/macos-build.yml/badge.svg?branch=main)](https://github.com/tonedefdev/terracreds/actions/workflows/macos-build.yml) [![Ubuntu Build](https://github.com/tonedefdev/terracreds/actions/workflows/ubuntu-build.yml/badge.svg?branch=main)](https://github.com/tonedefdev/terracreds/actions/workflows/ubuntu-build.yml) [![Windows Build](https://github.com/tonedefdev/terracreds/actions/workflows/windows-build.yml/badge.svg?branch=main)](https://github.com/tonedefdev/terracreds/actions/workflows/window-build.yml)
 
 <img src="./img/terracreds.png" align="right" width="350" height="350">
 
@@ -78,10 +78,16 @@ brew install tonedefdev/terracreds/terracreds
 You'll need to download the latest binary from our release page and place it anywhere on `$PATH` of your system. You can also copy and run the following commands:
 
 ```bash
-wget https://github.com/tonedefdev/terracreds/releases/download/v2.1.3/terracreds_2.1.3_linux_amd64.tar.gz && \
-tar -xvf terracreds_2.1.3_linux_amd64.tar.gz && \
+VERSION="<REPLACE_WITH_DESIRED_VERSION_FROM_GITHUB_RELEASES>" \
+wget https://github.com/tonedefdev/terracreds/releases/download/v${VERSION}/terracreds_${VERSION}_linux_amd64.tar.gz && \
+tar -xvf terracreds_${VERSION}_linux_amd64.tar.gz && \
 sudo mv -f terracreds /usr/bin/terracreds && \
-rm -f terracreds_2.1.3_linux_amd64.tar.gz README.md
+rm -f terracreds_${VERSION}_linux_amd64.tar.gz README.md
+```
+
+You can also use `homebrew` to install on `Ubuntu` machines where `brew` is available:
+```bash
+brew install tonedefdev/terracreds/terracreds
 ```
 
 The `terracreds` Linux implementation uses `gnome-keyring` in conjunction with `gnome-keyring-daemon` 
@@ -132,12 +138,12 @@ go install -v
 Navigate to the root of the project directory and you should see the `terracreds.exe` binary for Windows or `terracreds` for macOS and Linux. On Windows, copy the `.exe` to any directory of your choosing. Be sure to add the directory on `$env:PATH` for Windows to make using the application easier. On macOS and Linux we recommend you place the binary in `/usr/bin` as this directory should already be on the `$PATH` environment variable.
 
 ## Upgrading
-If you're upgrading to the latest version of `terracreds` from a previous version use one of the methods above to install the latest binary. Once successfully installed on your system you just need to run `terracreds generate` to copy the latest version to the correct `plugins` directory for your operating system.
+If you're upgrading to the latest version of `terracreds` from a previous version use one of the methods above to either install the latest binary or use the package manager for your specific operating system. Once successfully installed on your system you just need to run `terracreds generate` to copy the latest version to the correct `plugins` directory for your operating system.
 
 ## Initial Configuration
 In order for `terracreds` to act as your credential provider you'll need to generate the binary and the plugin directory in the default location that Terraform looks for plugins. Specifically, for credential helpers, and for Windows, the directory is `%APPDATA%\terraform.d\plugins` and for macOS and Linux `$HOME/.terraform.d/.terraformrc`.
 
-To make things as simple as possible we created a helper command to generate everthing needed to use the app. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
+To make things as simple as possible we created a helper command to generate everything needed to use the app. All you need to do is run the following command in `terracreds` to generate the plugin directory, and the correctly formatted binary that Terraform will use:
 ```bash
 terracreds generate
 ```
@@ -262,7 +268,7 @@ The above example would maintain the dash `[-]` in the output of the formatted T
 Additionally, you can use `--as-json` to return the secret names and values as a JSON string. This is printed to standard output so you can make use of shell pipes and other commands to ingest the data.
 
 ## Setting Up a Vault Provider
-> We have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD piepline agent or a development workstation.
+> We have example [terraform](https://github.com/tonedefdev/terracreds/tree/main/terraform) code you can reference in order to setup your `AWS` or `Azure` VMs to use `terracreds` for a CI/CD pipeline agent or a development workstation.
 
 > New in version `2.1.0`
 

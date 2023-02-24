@@ -8,6 +8,7 @@ import (
 
 	"github.com/tonedefdev/terracreds/api"
 	"github.com/urfave/cli/v2"
+	"github.com/zalando/go-keyring"
 )
 
 func app() *cli.App {
@@ -23,7 +24,11 @@ func config() Config {
 		ConfigFile: ConfigFile{
 			Path: path,
 		},
-		TerraCreds: NewTerraCreds(runtime.GOOS),
+		TerraCreds: NewTerraCreds(),
+	}
+
+	if runtime.GOOS == "linux" {
+		keyring.MockInit()
 	}
 
 	return config

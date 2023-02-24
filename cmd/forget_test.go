@@ -7,26 +7,19 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func TestNewCommandActionCreateTemp(t *testing.T) {
+func TestNewCommandActionForget(t *testing.T) {
 	terracreds := config()
 	app := app()
 	app.Commands = []*cli.Command{
 		terracreds.NewCommandCreate(),
+		terracreds.NewCommandForget(),
 	}
 
 	args := os.Args[0:1]
 	args = append(args, "create", "--name=test", "--secret=password")
 	app.Run(args)
-}
 
-func TestNewCommandActionForget(t *testing.T) {
-	terracreds := config()
-	app := app()
-	app.Commands = []*cli.Command{
-		terracreds.NewCommandForget(),
-	}
-
-	args := os.Args[0:1]
+	args = os.Args[0:1]
 	args = append(args, "forget", "test")
 	app.Run(args)
 }

@@ -1,14 +1,17 @@
-name: Windows Build
+name: macOS Build
 
 on:
+  push:
+    branches:
+    - main
   pull_request:
     branches:
     - main
 
 jobs:
-  test-win:
-    name: Build and Test Windows
-    runs-on: windows-latest
+  test-mac:
+    name: Build and Test macOS
+    runs-on: macos-latest
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
@@ -21,12 +24,12 @@ jobs:
         fetch-depth: 0
     - name: Build
       run: |
+        mkdir /Users/runner/.terraform.d
         go build .
+      env:
+        HOME: /Users/runner/
     - name: Test
       run: |
-        New-Item -ItemType Directory -Name terraform.d -Path $env:APPDATA | Out-Null
-        $env:HOME=$env:APPDATA
-        $env:TC_CONFIG_PATH=$env:APPDATA
-        $env:PATH += ";$pwd"
+        export PATH=$PATH:$PWD
         cd cmd
         go test -v -cover

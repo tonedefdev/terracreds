@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/user"
 
-	"github.com/fatih/color"
+	"github.com/tonedefdev/terracreds/pkg/errors"
 	"github.com/tonedefdev/terracreds/pkg/helpers"
 	"github.com/urfave/cli/v2"
 )
@@ -42,8 +41,13 @@ func (cmd *Config) NewCommandCreate() *cli.Command {
 // newCommandActionCreate creates the secret based on the OS and type of vault
 func (cmd *Config) newCommandActionCreate(c *cli.Context) error {
 	if len(os.Args) == 2 {
-		fmt.Fprintf(color.Output, "%s: No secret name or secret was specified. Use 'terracreds create -h' to print help info\n", color.RedString("ERROR"))
-		return nil
+		err := &errors.CustomError{
+			Message: "No secret name or secret was specified. Use 'terracreds create -h' to print help info",
+			Level:   "ERROR",
+		}
+
+		helpers.Logging(cmd.Cfg, err.Message, err.Level)
+		return err
 	}
 
 	terraVault := cmd.NewTerraVault(c.String("name"))

@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/user"
 
-	"github.com/fatih/color"
+	"github.com/tonedefdev/terracreds/pkg/errors"
 	"github.com/tonedefdev/terracreds/pkg/helpers"
 	"github.com/urfave/cli/v2"
 )
@@ -27,8 +26,13 @@ func (cmd *Config) NewCommandStore() *cli.Command {
 // newCommandActionStore creates the secret in the vault when 'terraform login' is called
 func (cmd *Config) newCommandActionStore(c *cli.Context) error {
 	if len(os.Args) == 2 {
-		fmt.Fprintf(color.Output, "%s: No hostname was specified. Use 'terracreds store -h' to print help info\n", color.RedString("ERROR"))
-		return nil
+		err := &errors.CustomError{
+			Message: "No hostname was specified. Use 'terracreds store -h' to print help info",
+			Level:   "ERROR",
+		}
+
+		helpers.Logging(cmd.Cfg, err.Message, err.Level)
+		return err
 	}
 
 	terraVault := cmd.NewTerraVault(os.Args[2])
