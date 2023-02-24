@@ -1,0 +1,32 @@
+name: Ubuntu Build
+
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  test-mac:
+    name: Build and Test Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.19
+      id: go
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Build
+      run: |
+        mkdir /Users/runner/.terraform.d
+        go build .
+      env:
+        HOME: /Users/runner/
+    - name: Test
+      run: |
+        export PATH=$PATH:$PWD
+        cd cmd
+        go test -v -cover
