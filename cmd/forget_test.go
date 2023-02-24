@@ -11,6 +11,7 @@ func TestNewCommandActionForget(t *testing.T) {
 	terracreds := config()
 	app := app()
 	app.Commands = []*cli.Command{
+		terracreds.NewCommandCreate(),
 		terracreds.NewCommandForget(),
 	}
 
