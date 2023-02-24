@@ -3,10 +3,12 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/tonedefdev/terracreds/api"
 	"github.com/urfave/cli/v2"
+	"github.com/zalando/go-keyring"
 )
 
 func app() *cli.App {
@@ -23,6 +25,10 @@ func config() Config {
 			Path: path,
 		},
 		TerraCreds: NewTerraCreds(),
+	}
+
+	if runtime.GOOS == "linux" {
+		keyring.MockInit()
 	}
 
 	return config
