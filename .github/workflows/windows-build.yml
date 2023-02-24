@@ -1,6 +1,6 @@
 name: Windows Build
 
-on: [push, pull_request]
+on:
   push:
     branches:
     - main
