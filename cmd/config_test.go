@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/tonedefdev/terracreds/api"
@@ -23,7 +22,7 @@ func config() Config {
 		ConfigFile: ConfigFile{
 			Path: path,
 		},
-		TerraCreds: NewTerraCreds(runtime.GOOS),
+		TerraCreds: NewTerraCreds(),
 	}
 
 	return config

@@ -7,7 +7,6 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets v0.7.1
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/aws/aws-sdk-go v1.41.0
-	github.com/danieljoos/wincred v1.1.0
 	github.com/fatih/color v1.9.0
 	github.com/hashicorp/vault/api v1.1.1
 	github.com/urfave/cli/v2 v2.2.0
@@ -20,6 +19,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.5.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0 // indirect
+	github.com/danieljoos/wincred v1.1.0 // indirect
 	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect

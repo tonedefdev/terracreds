@@ -164,17 +164,8 @@ func (cmd *Config) LoadConfig(path string) error {
 }
 
 // NewTerraCreds is the constructor to create a TerraCreds interface
-func NewTerraCreds(os string) TerraCreds {
-	switch os {
-	case "darwin":
-		return &platform.Mac{}
-	case "linux":
-		return &platform.Linux{}
-	case "windows":
-		return &platform.Windows{}
-	default:
-		return nil
-	}
+func NewTerraCreds() TerraCreds {
+	return &platform.Platform{}
 }
 
 // NewTerrVault is the constructor to create a TerraVault interface for the vault provider defined in the Cfg
