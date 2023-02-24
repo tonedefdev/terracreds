@@ -21,10 +21,10 @@ jobs:
         fetch-depth: 0
     - name: Build
       run: |
-        mkdir /Users/runner/.terraform.d
+        mkdir $HOME/.terraform.d
         go build .
       env:
-        HOME: /Users/runner/
+        HOME: /home/runner
     - name: Test
       run: |
         export PATH=$PATH:$PWD
