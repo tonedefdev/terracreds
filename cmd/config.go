@@ -106,7 +106,7 @@ func (cmd *Config) newCommandActionReset(c *cli.Context) error {
 func (cmd *Config) newCommandAws() *cli.Command {
 	awsConfig := &cli.Command{
 		Name:  "aws",
-		Usage: "AWS Secret Managers provider configuration settings",
+		Usage: "AWS Secrets Manager provider configuration settings",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "description",
@@ -211,7 +211,7 @@ func (cmd *Config) newCommandActionAzure(c *cli.Context) error {
 func (cmd *Config) newCommandGcp() *cli.Command {
 	gcpConfig := &cli.Command{
 		Name:  "gcp",
-		Usage: "Google Cloud Provider Secret Managers configuration settings",
+		Usage: "Google Cloud Provider Secrets Manager configuration settings",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "project-id",
@@ -220,7 +220,7 @@ func (cmd *Config) newCommandGcp() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:     "secret-id",
-				Usage:    "The name of the secret identifier in GCP Secret Manager. If omitted Terracreds will use the hostname value instead",
+				Usage:    "The name of the secret identifier in GCP Secrets Manager. If omitted Terracreds will use the hostname value instead",
 				Value:    "",
 				Required: false,
 			},

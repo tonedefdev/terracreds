@@ -67,7 +67,7 @@ func (hc *HashiVault) Get() ([]byte, error) {
 	kvPath := fmt.Sprintf("%s/data/%s", hc.KeyVaultPath, hc.SecretPath)
 	secret, err := client.Logical().Read(kvPath)
 	if secret == nil {
-		return nil, errors.New("No secet. Need to create.")
+		return nil, errors.New("no secret. need to create")
 	}
 
 	data, ok := secret.Data["data"].(map[string]interface{})
