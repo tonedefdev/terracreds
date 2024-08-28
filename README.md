@@ -299,7 +299,7 @@ terracreds config aws --description 'my super secret' --region 'us-west-2' --sec
 | `region` | The `Secrets Manager` instance's region where the secret will be stored | `yes` | 
 | `secretName` | A name for the secret. If omitted and using `terraform login` the hostname of the TACOS server will be used for the name instead | `no` |
 
-The following role permissions are required in order for the `EC2 Instance Role` to leverage `terracreds` with `AWS Secrets Manager`:
+The following permissions are required in order for an assumed `AWS IAM Role` to leverage `terracreds` to access and manage `AWS Secrets Manager`:
 ```hcl
 Action = [
   "secretsmanager:CreateSecret",
