@@ -98,8 +98,7 @@ func (cmd *Config) newCommandActionReset(c *cli.Context) error {
 		return err
 	}
 
-	err := c.Command.Run(c)
-	return err
+	return nil
 }
 
 // newCommandAws instantiates the command used to setup the AWS configuration

@@ -50,7 +50,9 @@ func TestNewCommandConfig(t *testing.T) {
 
 	args := os.Args[0:1]
 	args = append(args, "config")
-	app.Run(args)
+	if err := app.Run(args); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestNewCommandAws(t *testing.T) {

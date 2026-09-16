@@ -46,12 +46,13 @@ func (akv *AzureKeyVault) Create(secretValue string, method string) error {
 	}
 
 	content := "password"
-	options := azsecrets.SetSecretOptions{
+	parameters := azsecrets.SetSecretParameters{
+		Value:       &secretValue,
 		ContentType: &content,
 	}
 
 	secret := formatSecretName(akv.SecretName)
-	_, err = client.SetSecret(ctx, secret, secretValue, &options)
+	_, err = client.SetSecret(ctx, secret, parameters, nil)
 	return err
 }
 
@@ -63,10 +64,9 @@ func (akv *AzureKeyVault) Delete() error {
 		return err
 	}
 
-	options := azsecrets.BeginDeleteSecretOptions{}
 	secret := formatSecretName(akv.SecretName)
 
-	_, err = client.BeginDeleteSecret(ctx, secret, &options)
+	_, err = client.DeleteSecret(ctx, secret, nil)
 	return err
 }
 
@@ -81,7 +81,7 @@ func (akv *AzureKeyVault) Get() ([]byte, error) {
 	options := azsecrets.GetSecretOptions{}
 	secret := formatSecretName(akv.SecretName)
 
-	get, err := client.GetSecret(ctx, secret, &options)
+	get, err := client.GetSecret(ctx, secret, "", &options)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (akv *AzureKeyVault) List(secretNames []string) ([]string, error) {
 		options := azsecrets.GetSecretOptions{}
 		secret := formatSecretName(secret)
 
-		get, err := client.GetSecret(ctx, secret, &options)
+		get, err := client.GetSecret(ctx, secret, "", &options)
 		if err != nil {
 			return nil, err
 		}
