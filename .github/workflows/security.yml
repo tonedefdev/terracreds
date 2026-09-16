@@ -1,0 +1,70 @@
+name: Security
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    name: Security checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Prepare Terraform plugin directory
+        run: mkdir -p "$HOME/.terraform.d"
+
+      - name: Test
+        run: go test ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Check cmd coverage
+        run: |
+          set -euo pipefail
+          go test -coverprofile=coverage.out ./cmd
+          coverage=$(go tool cover -func=coverage.out | awk '$1 == "total:" {gsub("%", "", $3); print $3}')
+          awk -v coverage="$coverage" 'BEGIN { if (coverage + 0 < 70) exit 1 }'
+
+      - name: Report all Trivy findings
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: 0
+          format: table
+          cache: true
+          cache-dir: .cache/trivy
+
+      # The gate intentionally excludes UNKNOWN, LOW, and MEDIUM vulnerabilities.
+      - name: Gate on HIGH and CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: 1
+          format: table
+          cache: true
+          cache-dir: .cache/trivy

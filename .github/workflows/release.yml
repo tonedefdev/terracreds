@@ -3,26 +3,31 @@ name: release-terracreds
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
+
+permissions:
+  contents: read
 
 jobs:
   goreleaser:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v2
-      with:
-        go-version: ^1.19
-      id: go
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v2
+    - name: Set up Go
+      uses: actions/setup-go@v6
       with:
-        version: latest
+        go-version-file: go.mod
+      id: go
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v7
+      with:
+        version: '~> v2'
         args: release --clean
       env:
-        GITHUB_TOKEN: ${{ secrets.GO_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
