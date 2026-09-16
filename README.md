@@ -460,3 +460,7 @@ ps -ef | grep gnome-keyring
 
 If more than one daemon is running, take note of the pid, and use `kill` to terminate the additional daemon. Try your previous command again
 and it should now be working.
+
+## Related Projects
+
+- [tfvault](https://github.com/tedilabs/tfvault) — a universal Terraform/OpenTofu credentials helper focused on pluggable local backends (OS keyring, pass/gopass, 1Password) with per-profile isolation for running multiple accounts on one machine. macOS and Linux. If you need Windows Credential Manager or cloud vault providers (AWS/Azure/GCP/HashiCorp Vault), Terracreds is the right tool; for local-first multi-account setups on macOS/Linux, take a look at tfvault.
