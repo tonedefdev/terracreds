@@ -11,4 +11,4 @@ archives:
 - name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   format_overrides:
     - goos: windows
-      format: zip
+      formats: [zip]
