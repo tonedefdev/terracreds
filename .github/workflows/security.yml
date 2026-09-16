@@ -26,6 +26,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Prepare Terraform plugin directory
+        run: mkdir -p "$HOME/.terraform.d"
+
       - name: Test
         run: go test ./...
 
